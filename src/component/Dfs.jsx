@@ -38,22 +38,42 @@ const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge) => {
     }
 }
 
-const handleDfs = (cyRef,begin,order,setOrder) => {
-  var dfs = cyRef.elements().dfs(`#${begin}`, function(){}, true);
+//handle animation in async await as a recursive highlightNextEle runs
+const handleAnimationDfs = async (cyRef,begin,order,setOrder) => {
+  var dfs = cyRef.elements().dfs(`#${begin}`,function(){});
   var i = 0;
-  var highlightNextEle = function(){
+  //need this to delay the highlight for 1s.
+  const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
+  var highlightNextEle = async function(){
     if( i < dfs.path.length ){
       dfs.path[i].addClass('highlighted');
       if (dfs.path[i].isNode()){
         setOrder(dfs.path[i]._private.data.id);
       }
       i++;
-      setTimeout(highlightNextEle, 1000);
+      await timeout(1000);
+      await highlightNextEle();
     }
   };
-  highlightNextEle();
+  await highlightNextEle();
+}
+const handleDfs = async(cyRef,begin,order,setOrder) => {
+  await handleAnimationDfs(cyRef,begin,order,setOrder);
+  await handleRemoveAnimation(cyRef, begin);
 }
 
+const handleRemoveAnimation = (cyRef,begin) => {
+  var dfs = cyRef.elements().dfs(`#${begin}`, function(){});
+  var i = 0;
+  var removeStyleNextEle = function(){
+    if( i < dfs.path.length ){
+      dfs.path[i].removeClass('highlighted');
+      i++;
+    }
+    setTimeout(removeStyleNextEle,0);
+  };
+  removeStyleNextEle();
+}
 const Dfs = (props) =>{
   const [newNode, setNewNode] = React.useState(null);
   const [newEdge, setNewEdge] = React.useState(null);

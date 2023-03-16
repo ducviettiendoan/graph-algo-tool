@@ -28,17 +28,17 @@ function App() {
         })
       .selector('edge')
         .css({
-          'target-arrow-shape': 'triangle',
+          // 'target-arrow-shape': 'triangle',
           'width': 4,
           'line-color': '#ddd',
-          'target-arrow-color': '#ddd',
+          // 'target-arrow-color': '#ddd',
           'curve-style': 'bezier'
         })
       .selector('.highlighted')
         .css({
           'background-color': '#61bffc',
           'line-color': '#61bffc',
-          'target-arrow-color': '#61bffc',
+          // 'target-arrow-color': '#61bffc',
           'transition-property': 'background-color, line-color',
           'transition-duration': '0.5s'
         })

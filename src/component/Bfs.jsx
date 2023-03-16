@@ -40,20 +40,40 @@ const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge) => {
     }
 }
 
-const handleBfs = (cyRef,begin,order,setOrder) => {
-    var bfs = cyRef.elements().bfs(`#${begin}`, function(){}, true);
+const handleAnimationBfs = async(cyRef,begin,order,setOrder) => {
+    var bfs = cyRef.elements().bfs(`#${begin}`, function(){});
     var i = 0;
-    var highlightNextEle = function(){
+    const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
+    var highlightNextEle = async function(){
       if( i < bfs.path.length ){
         bfs.path[i].addClass('highlighted');
         if (bfs.path[i].isNode()){
             setOrder(bfs.path[i]._private.data.id);
         }
         i++;
-        setTimeout(highlightNextEle, 1000);
+        await timeout(1000);
+        await highlightNextEle();
       }
     };
-    highlightNextEle();
+    await highlightNextEle();
+}
+
+const handleRemoveAnimation = (cyRef,begin) => {
+  var bfs = cyRef.elements().bfs(`#${begin}`, function(){});
+  var i = 0;
+  var removeStyleNextEle = function(){
+    if( i < bfs.path.length ){
+      bfs.path[i].removeClass('highlighted');
+      i++;
+    }
+    setTimeout(removeStyleNextEle,0);
+  };
+  removeStyleNextEle();
+}
+
+const handleBfs = async(cyRef,begin,order,setOrder) => {
+  await handleAnimationBfs(cyRef,begin,order,setOrder);
+  await handleRemoveAnimation(cyRef, begin);
 }
 
 const Bfs = (props) =>{
