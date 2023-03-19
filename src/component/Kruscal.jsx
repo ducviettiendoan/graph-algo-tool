@@ -26,9 +26,10 @@ const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge) => {
     let edge = addEdge.split(',');
     //handle edge does not exist
     if (nodes.includes(edge[0]) && nodes.includes(edge[1])){
-        let new_edge = { data: { source: `${edge[0]}`, target: `${edge[1]}`, label: `Edge from Node${edge[0]} to Node${edge[1]}`}};
+        let new_edge = { data: { source: `${edge[0]}`, target: `${edge[1]}`, label: `Edge from Node${edge[0]} to Node${edge[1]}`, weight: `${edge[2]}`}};
         setElements([...elements, new_edge]);
         cyRef.add(new_edge);
+        cyRef._private.elements[cyRef._private.elements.length-1].addClass('weight');  
     }else{
         console.error("Cannot add edge!");
     }
@@ -39,56 +40,52 @@ const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge) => {
 }
 
 //handle animation in async await as a recursive highlightNextEle runs
-const handleAnimationDfs = async (cyRef,begin,order,setOrder) => {
-  var dfs = cyRef.elements().dfs(`#${begin}`,function(){});
-  var i = 0;
-  console.log(dfs);
-  //need this to delay the highlight for 1s.
-  const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
-  var highlightNextEle = async function(){
-    if( i < dfs.path.length ){
-      dfs.path[i].addClass('highlighted');
-      if (dfs.path[i].isNode()){
-        setOrder(dfs.path[i]._private.data.id);
-      }
-      i++;
-      await timeout(1000);
-      await highlightNextEle();
+const handleKruskal = async (cyRef) => {
+    var k = cyRef.elements().kruskal(function(edge){
+        return edge.data('weight');
+    });
+    var i = 0;
+    console.log(k);
+    //need this to delay the highlight for 1s.
+  var highlightNextEle = async function(edge){
+    if( i < k.length ){
+        k[i].addClass('highlighted');
+        i++;
+        highlightNextEle();
     }
   };
-  await highlightNextEle();
-}
-const handleDfs = async(cyRef,begin,order,setOrder) => {
-  await handleAnimationDfs(cyRef,begin,order,setOrder);
-  await handleRemoveAnimation(cyRef, begin);
+  highlightNextEle();
 }
 
-const handleRemoveAnimation = (cyRef,begin) => {
-  var dfs = cyRef.elements().dfs(`#${begin}`, function(){});
-  var i = 0;
-  var removeStyleNextEle = function(){
-    if( i < dfs.path.length ){
-      dfs.path[i].removeClass('highlighted');
-      i++;
+const handleRemoveAnimation = (cyRef) => {
+    var k = cyRef.elements().kruskal(function(edge){
+        return edge.data('weight'); 
+    });
+    console.log(k);
+    var i = 0;
+    var removeStyleNextEle = function(){
+        if( i < k.length ){
+            k[i].removeClass('highlighted');
+            i++;
+            removeStyleNextEle();
+        }
     }
-    setTimeout(removeStyleNextEle,0);
-  };
-  removeStyleNextEle();
+    removeStyleNextEle();
 }
-const Dfs = (props) =>{
+const Kruskal = (props) =>{
   const [newNode, setNewNode] = React.useState(null);
   const [newEdge, setNewEdge] = React.useState(null);
   const [nodes, setNodes] = React.useState([]);
-  const [rootNode, setRootNode] = React.useState();
-  const [order, setOrder] = React.useState();
-  const [orderRender, setOrderRender] = React.useState([]);
+//   const [rootNode, setRootNode] = React.useState();
+//   const [order, setOrder] = React.useState();
+//   const [orderRender, setOrderRender] = React.useState([]);
   //handle clean TextField value after onClick add.
   const inputNode = React.useRef();
   const inputEdge = React.useRef();
 
-  React.useEffect(()=>{
-    setOrderRender([...orderRender,order]);
-  },[order]);
+//   React.useEffect(()=>{
+//     setOrderRender([...orderRender,order]);
+//   },[order]);
   return (
     <>
     <div>
@@ -97,15 +94,15 @@ const Dfs = (props) =>{
         <TextField id="outlined-basic" label="Edge" variant="outlined" ref={inputEdge} onChange={(e) => {setNewEdge(e.target.value)}}/>
         <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge)}>Add edge</Button>
       </div>
-      <TextField id="outlined-basic" label="Node" variant="outlined" onChange={(e) => setRootNode(e.target.value)}/>
-      <Button variant='contained' onClick={()=>{handleDfs(props.cyRef,rootNode,order,setOrder)}}>Run DFS</Button>
-      <div>
+      <Button variant='contained' onClick={()=>{handleKruskal(props.cyRef)}}>Run Kruscal</Button>
+      <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef)}}>Clear Animation</Button>
+      {/* <div>
         {orderRender.map((node)=>{
           return(<span>{node}</span>);
         })}
-      </div>
+      </div> */}
     </>
   );
 }
 
-export default Dfs;
+export default Kruskal;

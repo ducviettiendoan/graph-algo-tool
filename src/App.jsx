@@ -5,6 +5,7 @@ import Bfs from './component/Bfs';
 import Nav from './component/Nav';
 import Home from './component/Home';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import Kruscal from './component/Kruscal';
 
 // const elements = [
 //   { data: { id: 'one', label: 'Node 1' }, position: { x: 400, y: 250} },
@@ -42,6 +43,10 @@ function App() {
           'transition-property': 'background-color, line-color',
           'transition-duration': '0.5s'
         })
+      .selector('.weight')
+        .css({
+          'content': 'data(weight)'
+        })
     cyRef.current.zoomingEnabled(false);
   }
   return (
@@ -52,6 +57,7 @@ function App() {
           <Route path="/" element={<Home/>} />
           <Route path="/bfs" element={<Bfs cyRef = {cyRef.current} elements = {elements} setElements = {setElements}/>} />
           <Route path="/dfs" element={<Dfs cyRef = {cyRef.current} elements = {elements} setElements = {setElements}/>} />
+          <Route path="/kruskal" element={<Kruscal cyRef = {cyRef.current} elements = {elements} setElements = {setElements}/>} />
         </Routes>
       </BrowserRouter>
       <div style={{display:"flex", justifyContent:"center"}}>
