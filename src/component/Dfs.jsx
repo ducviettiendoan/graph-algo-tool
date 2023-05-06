@@ -4,11 +4,16 @@ import { Button, TextField } from '@mui/material';
 const POSITION_X = 400;
 const POSITION_Y = 250;
 
-const handleAddNode = (addNode,elements,setElements,nodes,setNodes,cyRef,inputNode) => {
+const handleAddNode = (addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN) => {
+    setDuplicateN(false);
     const random_x = Math.floor(Math.random() * 100) + 1;
     const add_x = random_x > 50 ? random_x:random_x-100;
     const add_y = Math.floor(Math.random() * 100) + 50;
-    console.log(add_x,add_y);
+    if (cyRef && cyRef.elements(`node#${addNode}`).size()>0){
+      console.log(cyRef.elements(`node#${addNode}`).size());
+      setDuplicateN(true);
+      return;
+    }
     let new_node = {};
     elements.length === 0 ? new_node = { data: { id: `${addNode}`, label: `Node ${addNode}` }, position: { x: POSITION_X, y: POSITION_Y} } : 
     new_node = { data: { id: `${addNode}`, label: `Node ${addNode}` }, position: { x: elements[0].position.x+add_x, y: elements[0].position.y+add_y} } //position based on 1st node
@@ -23,8 +28,17 @@ const handleAddNode = (addNode,elements,setElements,nodes,setNodes,cyRef,inputNo
     }
 }
 
-const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge) => {
+const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE) => {
+    setDuplicateE(false);
     let edge = addEdge.split(',');
+    if (cyRef){
+      let a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`).size();
+      let b = cyRef.edges(`edge[source="${edge[1]}"][target="${edge[0]}"]`).size();
+      if (a || b){
+        setDuplicateE(true);
+        return;
+      }
+    }
     //handle edge does not exist
     if (nodes.includes(edge[0]) && nodes.includes(edge[1])){
         let new_edge = { data: { source: `${edge[0]}`, target: `${edge[1]}`, label: `Edge from Node${edge[0]} to Node${edge[1]}`}};
@@ -112,19 +126,22 @@ const Dfs = (props) =>{
   //handle clean TextField value after onClick add.
   const [removeEdge, setRemoveEdge] = React.useState();
   const [removeNode, setRemoveNode] = React.useState();
+  const [duplicateN, setDuplicateN] = React.useState(false);
+  const [duplicateE, setDuplicateE] = React.useState(false);
   //this 2 ref are used for multiple components
   const inputNode = React.useRef([]);
   const inputEdge = React.useRef([]);
+
   React.useEffect(()=>{
     setOrderRender([...orderRender,order]);
   },[order]);
   return (
     <>
-    <div>
+      <div>
         <TextField id="outlined-basic" label="Node" variant="outlined" ref={el=>inputNode.current[0]=el} onChange={(e) => setNewNode(e.target.value)}/>
-        <Button variant='contained' onClick={()=>handleAddNode(newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode)}>Add node</Button>
+        <Button variant='contained' onClick={()=>handleAddNode(newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}>Add node</Button>
         <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}}/>
-        <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge)}>Add edge</Button>
+        <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE)}>Add edge</Button>
       </div>
       <TextField id="outlined-basic" label="Node" variant="outlined" onChange={(e) => setRootNode(e.target.value)}/>
       <Button variant='contained' onClick={()=>{handleDfs(props.cyRef,rootNode,order,setOrder,setOrderRender)}}>Run DFS</Button>
@@ -137,6 +154,8 @@ const Dfs = (props) =>{
           return(<span>{node}</span>);
         })}
       </div>
+      {duplicateN && <div>Node is already exist</div>}
+      {duplicateE && <div>Edge is already exist</div>}
     </>
   );
 }
