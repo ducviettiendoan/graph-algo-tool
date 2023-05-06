@@ -17,8 +17,8 @@ const handleAddNode = (addNode,elements,setElements,nodes,setNodes,cyRef,inputNo
       cyRef.add(new_node);
     }
     //handle clear TextField value
-    if (inputNode.current){
-      inputNode.current.children[1].children[0].value = null;
+    if (inputNode.current[0]){
+      inputNode.current[0].children[1].children[0].value = null;
     }
 }
 
@@ -35,8 +35,8 @@ const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge) => {
         console.error("Cannot add edge!");
     }
     //handle clear TextField value
-    if (inputEdge.current){
-      inputEdge.current.children[1].children[0].value = null;
+    if (inputEdge.current[0]){
+      inputEdge.current[0].children[1].children[0].value = null;
     }
 }
 
@@ -75,9 +75,29 @@ const handleRemoveAnimation = (cyRef,begin,setOrderRender) => {
 const handleBfs = async(cyRef,begin,order,setOrder,setOrderRender) => {
   await handleAnimationBfs(cyRef,begin,order,setOrder);
   await handleRemoveAnimation(cyRef, begin,setOrderRender);
-  
 }
 
+// get node k and all edges coming out from it
+const handleRemoveNode = (cyRef,inputNode,node,setRemoveNode)=>{
+  //cy selector 
+  const removeElements = cyRef.elements(`node#${node}, edge[source = "${node}"]`);
+  cyRef.remove(removeElements);
+  setRemoveNode("");
+  if (inputNode.current[1]){
+    inputNode.current[1].children[1].children[0].value = null;
+  }
+}
+const handleRemoveEdge = (cyRef,inputEdge,edge,setRemoveEdge) => {
+  edge = edge.split(',');
+  console.log(cyRef);
+  //cy selector
+  const removeEdge = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`);
+  cyRef.remove(removeEdge);
+  setRemoveEdge("");
+  if (inputEdge.current[1]){
+    inputEdge.current[1].children[1].children[0].value = null;
+  }
+}
 const Bfs = (props) =>{
   const [newNode, setNewNode] = React.useState(null);
   const [newEdge, setNewEdge] = React.useState(null);
@@ -85,21 +105,28 @@ const Bfs = (props) =>{
   const [rootNode, setRootNode] = React.useState();
   const [order, setOrder] = React.useState();
   const [orderRender, setOrderRender] = React.useState([]);
-  const inputNode = React.useRef();
-  const inputEdge = React.useRef();
+  const [removeEdge, setRemoveEdge] = React.useState();
+  const [removeNode, setRemoveNode] = React.useState();
+  //this 2 ref are used for multiple components
+  const inputNode = React.useRef([]);
+  const inputEdge = React.useRef([]);
   React.useEffect(()=>{ 
     setOrderRender([...orderRender,order]);
   },[order]);
   return (
     <>
       <div>
-        <TextField id="outlined-basic" label="Node" variant="outlined" ref={inputNode} onChange={(e) => setNewNode(e.target.value)}/>
+        <TextField id="outlined-basic" label="Node" variant="outlined" ref={el => inputNode.current[0] = el} onChange={(e) => setNewNode(e.target.value)}/>
         <Button variant='contained' onClick={()=>handleAddNode(newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode)}>Add node</Button>
-        <TextField id="outlined-basic" label="Edge" variant="outlined" ref={inputEdge} onChange={(e) => {setNewEdge(e.target.value)}}/>
+        <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el => inputEdge.current[0] = el} onChange={(e) => {setNewEdge(e.target.value)}}/>
         <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge)}>Add edge</Button>
       </div>
-      <TextField id="outlined-basic" label="Node" variant="outlined" onChange={(e) => setRootNode(e.target.value)}/>
+      <TextField id="outlined-basic" label="Execute" variant="outlined" onChange={(e) => setRootNode(e.target.value)}/>
       <Button variant='contained' onClick={()=>{handleBfs(props.cyRef,rootNode,order,setOrder,setOrderRender)}}>Run BFS</Button>
+      <TextField id="outlined-basic" label="Remove Edge" variant="outlined" ref={el => inputEdge.current[1] = el} onChange={(e) => setRemoveEdge(e.target.value)}/>
+      <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge)}}>Remove edge</Button>
+      <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
+      <Button variant="contained" onClick={()=>{handleRemoveNode(props.cyRef,inputNode,removeNode,setRemoveNode)}}>Remove node</Button>
       <div>
         {orderRender.map((node)=>{
           return(<span>{node}</span>);
