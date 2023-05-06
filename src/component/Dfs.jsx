@@ -14,6 +14,7 @@ const handleAddNode = (addNode,elements,setElements,nodes,setNodes,cyRef,inputNo
     new_node = { data: { id: `${addNode}`, label: `Node ${addNode}` }, position: { x: elements[0].position.x+add_x, y: elements[0].position.y+add_y} } //position based on 1st node
     setElements([...elements, new_node]);
     setNodes([...nodes,new_node.data.id]);
+    console.log(cyRef);
     if (cyRef){
       cyRef.add(new_node);
     }
@@ -45,6 +46,7 @@ const handleAnimationDfs = async (cyRef,begin,order,setOrder) => {
   console.log(dfs);
   //need this to delay the highlight for 1s.
   const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
+  //async await in recursion -> need to timeout before another recursive call.
   var highlightNextEle = async function(){
     if( i < dfs.path.length ){
       dfs.path[i].addClass('highlighted');
@@ -56,14 +58,15 @@ const handleAnimationDfs = async (cyRef,begin,order,setOrder) => {
       await highlightNextEle();
     }
   };
+  //put await as highlightNextEle returns a Promise
   await highlightNextEle();
 }
-const handleDfs = async(cyRef,begin,order,setOrder) => {
+const handleDfs = async(cyRef,begin,order,setOrder,setOrderRender) => {
   await handleAnimationDfs(cyRef,begin,order,setOrder);
-  await handleRemoveAnimation(cyRef, begin);
+  await handleRemoveAnimation(cyRef, begin,setOrderRender);
 }
 
-const handleRemoveAnimation = (cyRef,begin) => {
+const handleRemoveAnimation = (cyRef,begin,setOrderRender) => {
   var dfs = cyRef.elements().dfs(`#${begin}`, function(){});
   var i = 0;
   var removeStyleNextEle = function(){
@@ -74,6 +77,7 @@ const handleRemoveAnimation = (cyRef,begin) => {
     setTimeout(removeStyleNextEle,0);
   };
   removeStyleNextEle();
+  setOrderRender([]);
 }
 const Dfs = (props) =>{
   const [newNode, setNewNode] = React.useState(null);
@@ -98,7 +102,7 @@ const Dfs = (props) =>{
         <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge)}>Add edge</Button>
       </div>
       <TextField id="outlined-basic" label="Node" variant="outlined" onChange={(e) => setRootNode(e.target.value)}/>
-      <Button variant='contained' onClick={()=>{handleDfs(props.cyRef,rootNode,order,setOrder)}}>Run DFS</Button>
+      <Button variant='contained' onClick={()=>{handleDfs(props.cyRef,rootNode,order,setOrder,setOrderRender)}}>Run DFS</Button>
       <div>
         {orderRender.map((node)=>{
           return(<span>{node}</span>);

@@ -58,7 +58,7 @@ const handleAnimationBfs = async(cyRef,begin,order,setOrder) => {
     await highlightNextEle();
 }
 
-const handleRemoveAnimation = (cyRef,begin) => {
+const handleRemoveAnimation = (cyRef,begin,setOrderRender) => {
   var bfs = cyRef.elements().bfs(`#${begin}`, function(){});
   var i = 0;
   var removeStyleNextEle = function(){
@@ -69,11 +69,13 @@ const handleRemoveAnimation = (cyRef,begin) => {
     setTimeout(removeStyleNextEle,0);
   };
   removeStyleNextEle();
+  setOrderRender([]);
 }
 
-const handleBfs = async(cyRef,begin,order,setOrder) => {
+const handleBfs = async(cyRef,begin,order,setOrder,setOrderRender) => {
   await handleAnimationBfs(cyRef,begin,order,setOrder);
-  await handleRemoveAnimation(cyRef, begin);
+  await handleRemoveAnimation(cyRef, begin,setOrderRender);
+  
 }
 
 const Bfs = (props) =>{
@@ -97,7 +99,7 @@ const Bfs = (props) =>{
         <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge)}>Add edge</Button>
       </div>
       <TextField id="outlined-basic" label="Node" variant="outlined" onChange={(e) => setRootNode(e.target.value)}/>
-      <Button variant='contained' onClick={()=>{handleBfs(props.cyRef,rootNode,order,setOrder)}}>Run BFS</Button>
+      <Button variant='contained' onClick={()=>{handleBfs(props.cyRef,rootNode,order,setOrder,setOrderRender)}}>Run BFS</Button>
       <div>
         {orderRender.map((node)=>{
           return(<span>{node}</span>);
