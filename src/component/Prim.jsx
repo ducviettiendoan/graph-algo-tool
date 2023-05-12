@@ -62,21 +62,138 @@ const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge,setDup
 }
 
 //handle animation in async await as a recursive highlightNextEle runs
-const handleKruskal = (cyRef) => {
+const handleKruskal = async (cyRef) => {
     var k = cyRef.elements().kruskal(function(edge){
         return edge.data('weight');
     });
     var i = 0;
-    console.log("@@@",k);
+    console.log(k);
     //need this to delay the highlight for 1s.
-  var highlightNextEle = function(edge){
-    if( i < k.length ){
-        k[i].addClass('highlighted');
-        i++;
-        highlightNextEle();
+    var highlightNextEle = async function(edge){
+        if( i < k.length ){
+            k[i].addClass('highlighted');
+            i++;
+            highlightNextEle();
+        }
+    };
+    highlightNextEle();
+}
+
+function minKey(key,mstSet,V)
+{
+    // Initialize min value
+    let min = Number.MAX_VALUE;
+    let min_index;
+ 
+    for (let v = 0; v < V; v++){
+        if (mstSet[v] === false && key[v] < min){
+            min = key[v];
+            min_index = v;
+        }
     }
-  };
-  highlightNextEle();
+    return min_index;
+}
+ 
+//utility to find key by value on Obj
+function getKeyByValue(object, value) {
+    return Object.keys(object).find(key => object[key] === value);
+}
+// A utility function to print the
+// constructed MST stored in parent[]
+function makeHL(parent,graph,V,cyRef,idChart){
+    //add highlight on printing out selected edges.
+    const hl = [];
+    for (let i = 1; i < V; i++){
+        //convert number to node id
+        let source = getKeyByValue(idChart,parent[i]);
+        let target = getKeyByValue(idChart,i);
+        console.log(source,target);
+        //addClass
+        hl.push(cyRef.elements(`node#${source}`));
+        hl.push(cyRef.elements(`node#${target}`));
+        hl.push(cyRef.edges(`edge[source="${source}"][target="${target}"]`));
+        console.log(parent[i] + "-" + i + " " + graph[i][parent[i]]);
+    }
+    return hl;
+}
+ 
+// Function to construct and print MST for
+// a graph represented using adjacency
+// matrix representation
+function primMST(graph,V,cyRef,idChart)
+{
+    // Array to store constructed MST
+    let parent = [];
+    // Key values used to pick minimum weight edge in cut
+    let key = [];
+    // To represent set of vertices included in MST
+    let mstSet = [];
+    // Initialize all keys as INFINITE
+    for (let i = 0; i < V; i++){
+        key[i] = Number.MAX_VALUE;
+        mstSet[i] = false;
+    }
+    // Always include first 1st vertex in MST.
+    // Make key 0 so that this vertex is picked as first vertex.
+    key[0] = 0;
+    parent[0] = -1; // First node is always root of MST
+ 
+    // The MST will have V vertices
+    for (let count = 0; count < V - 1; count++)
+    {
+        // Pick the minimum key vertex from the
+        // set of vertices not yet included in MST
+        let u = minKey(key, mstSet,V);
+        // Add the picked vertex to the MST Set
+        mstSet[u] = true;
+        // Update key value and parent index of
+        // the adjacent vertices of the picked vertex.
+        // Consider only those vertices which are not
+        // yet included in MST
+        for (let v = 0; v < V; v++){
+            // graph[u][v] is non zero only for adjacent vertices of m
+            // mstSet[v] is false for vertices not yet included in MST
+            // Update the key only if graph[u][v] is smaller than key[v]
+            if (graph[u][v] && mstSet[v] === false && graph[u][v] < key[v]){
+                parent[v] = u;
+                key[v] = graph[u][v];
+            }
+        }
+    }
+    const k = makeHL(parent,graph,V,cyRef,idChart);
+    return k;
+}
+
+const handlePrim = (cyRef) => {
+    //construct the graph as param for prim func above. Follow: https://www.geeksforgeeks.org/prims-minimum-spanning-tree-mst-greedy-algo-5/#
+    const V = cyRef.nodes();
+    const idChart = {};
+    V.map((v,i)=>{
+        idChart[v.data('id')] = i;
+    })
+    const [r, c] = [V.length, V.length]; 
+    const graph = Array(r).fill().map(()=>Array(c).fill(0));
+    V.map((vertex)=>{
+        const neighbors = vertex.neighborhood(function( ele ){
+            return ele.isNode();
+        });
+        neighbors.map((v)=>{
+            const s = vertex.data('id');
+            const t = v.data('id');
+            const sTot = cyRef.edges(`edge[source="${s}"][target="${t}"]`).data('weight');
+            sTot?graph[idChart[s]][idChart[t]] = parseInt(sTot) : graph[idChart[s]][idChart[t]] = parseInt(cyRef.edges(`edge[source="${t}"][target="${s}"]`).data('weight'));
+        })
+    });
+    const k = primMST(graph,V.length,cyRef,idChart);
+    let i = 0;
+    var highlightNextEle = function(edge){
+        if( i < k.length ){
+            k[i].addClass('highlighted');
+            i++;
+            highlightNextEle();
+        }
+    };
+    highlightNextEle();
 }
 
 const handleRemoveAnimation = (cyRef) => {
@@ -117,7 +234,7 @@ const handleRemoveEdge = (cyRef,inputEdge,edge,setRemoveEdge) => {
     inputEdge.current[1].children[1].children[0].value = null;
   }
 }
-const Kruskal = (props) =>{
+const Prim = (props) =>{
   const [newNode, setNewNode] = React.useState(null);
   const [newEdge, setNewEdge] = React.useState(null);
   const [nodes, setNodes] = React.useState([]);
@@ -139,7 +256,7 @@ const Kruskal = (props) =>{
         <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}}/>
         <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE)}>Add edge</Button>
       </div>
-      <Button variant='contained' onClick={()=>{handleKruskal(props.cyRef)}}>Run Kruscal</Button>
+      <Button variant='contained' onClick={()=>{handlePrim(props.cyRef)}}>Run Prim</Button>
       <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef)}}>Clear Animation</Button>
       <TextField id="outlined-basic" label="Remove Edge" variant="outlined" ref={el => inputEdge.current[1] = el} onChange={(e) => setRemoveEdge(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge)}}>Remove edge</Button>
@@ -151,4 +268,4 @@ const Kruskal = (props) =>{
   );
 }
 
-export default Kruskal;
+export default Prim;
