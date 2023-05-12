@@ -111,7 +111,9 @@ function makeHL(parent,graph,V,cyRef,idChart){
         //addClass
         hl.push(cyRef.elements(`node#${source}`));
         hl.push(cyRef.elements(`node#${target}`));
-        hl.push(cyRef.edges(`edge[source="${source}"][target="${target}"]`));
+        let edge = cyRef.edges(`edge[source="${source}"][target="${target}"]`);
+        console.log(edge);
+        edge.length>0?hl.push(cyRef.edges(`edge[source="${source}"][target="${target}"]`)):hl.push(cyRef.edges(`edge[source="${target}"][target="${source}"]`));
         console.log(parent[i] + "-" + i + " " + graph[i][parent[i]]);
     }
     return hl;
@@ -185,6 +187,7 @@ const handlePrim = (cyRef) => {
         })
     });
     const k = primMST(graph,V.length,cyRef,idChart);
+    console.log(k);
     let i = 0;
     var highlightNextEle = function(edge){
         if( i < k.length ){
@@ -196,20 +199,8 @@ const handlePrim = (cyRef) => {
     highlightNextEle();
 }
 
+//to do
 const handleRemoveAnimation = (cyRef) => {
-    var k = cyRef.elements().kruskal(function(edge){
-        return edge.data('weight'); 
-    });
-    console.log(k);
-    var i = 0;
-    var removeStyleNextEle = function(){
-        if( i < k.length ){
-            k[i].removeClass('highlighted');
-            i++;
-            removeStyleNextEle();
-        }
-    }
-    removeStyleNextEle();
 }
 
 // get node k and all edges coming out from it
