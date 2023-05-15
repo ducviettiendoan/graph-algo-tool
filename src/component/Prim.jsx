@@ -183,6 +183,34 @@ const handlePrim = (cyRef) => {
 
 //to do
 const handleRemoveAnimation = (cyRef) => {
+    const V = cyRef.nodes();
+    const idChart = {};
+    V.map((v,i)=>{
+        idChart[v.data('id')] = i;
+    })
+    const [r, c] = [V.length, V.length]; 
+    const graph = Array(r).fill().map(()=>Array(c).fill(0));
+    V.map((vertex)=>{
+        const neighbors = vertex.neighborhood(function( ele ){
+            return ele.isNode();
+        });
+        neighbors.map((v)=>{
+            const s = vertex.data('id');
+            const t = v.data('id');
+            const sTot = cyRef.edges(`edge[source="${s}"][target="${t}"]`).data('weight');
+            sTot?graph[idChart[s]][idChart[t]] = parseInt(sTot) : graph[idChart[s]][idChart[t]] = parseInt(cyRef.edges(`edge[source="${t}"][target="${s}"]`).data('weight'));
+        })
+    });
+    const k = primMST(graph,V.length,cyRef,idChart);
+    var i = 0;
+    var removeStyleNextEle = function(){
+        if( i < k.length ){
+            k[i].removeClass('highlighted');
+            i++;
+            removeStyleNextEle();
+        }
+    }
+    removeStyleNextEle();
 }
 
 // get node k and all edges coming out from it
