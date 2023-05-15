@@ -145,10 +145,11 @@ function primMST(graph,V,cyRef,idChart)
         }
     }
     const k = makeHL(parent,graph,V,cyRef,idChart);
+    
     return k;
 }
 
-const handlePrim = (cyRef) => {
+const handlePrim = (cyRef,setHL) => {
     //construct the graph as param for prim func above. Follow: https://www.geeksforgeeks.org/prims-minimum-spanning-tree-mst-greedy-algo-5/#
     const V = cyRef.nodes();
     const idChart = {};
@@ -169,7 +170,8 @@ const handlePrim = (cyRef) => {
         })
     });
     const k = primMST(graph,V.length,cyRef,idChart);
-    console.log(k);
+    setHL(k);
+    // console.log(k);
     let i = 0;
     var highlightNextEle = function(edge){
         if( i < k.length ){
@@ -181,36 +183,25 @@ const handlePrim = (cyRef) => {
     highlightNextEle();
 }
 
-//to do
-const handleRemoveAnimation = (cyRef) => {
-    const V = cyRef.nodes();
-    const idChart = {};
-    V.map((v,i)=>{
-        idChart[v.data('id')] = i;
-    })
-    const [r, c] = [V.length, V.length]; 
-    const graph = Array(r).fill().map(()=>Array(c).fill(0));
-    V.map((vertex)=>{
-        const neighbors = vertex.neighborhood(function( ele ){
-            return ele.isNode();
-        });
-        neighbors.map((v)=>{
-            const s = vertex.data('id');
-            const t = v.data('id');
-            const sTot = cyRef.edges(`edge[source="${s}"][target="${t}"]`).data('weight');
-            sTot?graph[idChart[s]][idChart[t]] = parseInt(sTot) : graph[idChart[s]][idChart[t]] = parseInt(cyRef.edges(`edge[source="${t}"][target="${s}"]`).data('weight'));
-        })
-    });
-    const k = primMST(graph,V.length,cyRef,idChart);
+//to do (hl stored in a state could cause crash)
+const handleRemoveAnimation = (cyRef,setHL,hl) => {
+    console.log(hl);
+    if (!hl){
+        console.log("No highlighted element");
+        return;
+    }
     var i = 0;
     var removeStyleNextEle = function(){
-        if( i < k.length ){
-            k[i].removeClass('highlighted');
+        if( i < hl.length ){
+            hl[i].removeClass('highlighted');
             i++;
             removeStyleNextEle();
         }
     }
     removeStyleNextEle();
+    //reset hl state for next time run Prim 
+    setHL(null);
+    console.log(hl);
 }
 
 // get node k and all edges coming out from it
@@ -247,6 +238,8 @@ const Prim = (props) =>{
   //this 2 ref are used for multiple components
   const inputNode = React.useRef([]);
   const inputEdge = React.useRef([]);
+  //highlight elements state
+  const [hl,setHL] = React.useState(null);
 
   return (
     <>
@@ -257,8 +250,8 @@ const Prim = (props) =>{
         <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}}/>
         <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE)}>Add edge</Button>
       </div>
-      <Button variant='contained' onClick={()=>{handlePrim(props.cyRef)}}>Run Prim</Button>
-      <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef)}}>Clear Animation</Button>
+      <Button variant='contained' onClick={()=>{handlePrim(props.cyRef,setHL)}}>Run Prim</Button>
+      <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef,setHL,hl)}}>Clear Animation</Button>
       <TextField id="outlined-basic" label="Remove Edge" variant="outlined" ref={el => inputEdge.current[1] = el} onChange={(e) => setRemoveEdge(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge)}}>Remove edge</Button>
       <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
@@ -268,5 +261,4 @@ const Prim = (props) =>{
     </>
   );
 }
-
 export default Prim;

@@ -62,10 +62,11 @@ const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge,setDup
 }
 
 //handle animation in async await as a recursive highlightNextEle runs
-const handleKruskal = (cyRef) => {
+const handleKruskal = (cyRef,setHL) => {
     var k = cyRef.elements().kruskal(function(edge){
         return edge.data('weight');
     });
+    setHL(k);
     var i = 0;
     console.log("@@@",k);
     //need this to delay the highlight for 1s.
@@ -79,20 +80,21 @@ const handleKruskal = (cyRef) => {
   highlightNextEle();
 }
 
-const handleRemoveAnimation = (cyRef) => {
-    var k = cyRef.elements().kruskal(function(edge){
-        return edge.data('weight'); 
-    });
-    console.log(k);
+const handleRemoveAnimation = (cyRef,hl,setHL) => {
+    if (!hl){
+      console.log("No highlighted elements");
+      return;
+    }
     var i = 0;
     var removeStyleNextEle = function(){
-        if( i < k.length ){
-            k[i].removeClass('highlighted');
+        if( i < hl.length ){
+            hl[i].removeClass('highlighted');
             i++;
             removeStyleNextEle();
         }
     }
     removeStyleNextEle();
+    setHL(null);
 }
 
 // get node k and all edges coming out from it
@@ -129,6 +131,8 @@ const Kruskal = (props) =>{
   //this 2 ref are used for multiple components
   const inputNode = React.useRef([]);
   const inputEdge = React.useRef([]);
+  //highlight elements state
+  const [hl,setHL] = React.useState(null);
 
   return (
     <>
@@ -139,8 +143,8 @@ const Kruskal = (props) =>{
         <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}}/>
         <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE)}>Add edge</Button>
       </div>
-      <Button variant='contained' onClick={()=>{handleKruskal(props.cyRef)}}>Run Kruscal</Button>
-      <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef)}}>Clear Animation</Button>
+      <Button variant='contained' onClick={()=>{handleKruskal(props.cyRef,setHL)}}>Run Kruscal</Button>
+      <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef,hl,setHL)}}>Clear Animation</Button>
       <TextField id="outlined-basic" label="Remove Edge" variant="outlined" ref={el => inputEdge.current[1] = el} onChange={(e) => setRemoveEdge(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge)}}>Remove edge</Button>
       <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
