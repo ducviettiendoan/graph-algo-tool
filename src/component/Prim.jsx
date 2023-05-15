@@ -61,24 +61,6 @@ const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge,setDup
     }
 }
 
-//handle animation in async await as a recursive highlightNextEle runs
-const handleKruskal = async (cyRef) => {
-    var k = cyRef.elements().kruskal(function(edge){
-        return edge.data('weight');
-    });
-    var i = 0;
-    console.log(k);
-    //need this to delay the highlight for 1s.
-    var highlightNextEle = async function(edge){
-        if( i < k.length ){
-            k[i].addClass('highlighted');
-            i++;
-            highlightNextEle();
-        }
-    };
-    highlightNextEle();
-}
-
 function minKey(key,mstSet,V)
 {
     // Initialize min value
