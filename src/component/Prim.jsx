@@ -82,11 +82,13 @@ function getKeyByValue(object, value) {
 }
 // A utility function to print the
 // constructed MST stored in parent[]
-function makeHL(parent,graph,V,cyRef,idChart){
+const makeHL = (parent,graph,V,cyRef,idChart,order,setOrder) => {
     //add highlight on printing out selected edges.
+    // const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
     const hl = [];
     for (let i = 1; i < V; i++){
         //convert number to node id
+        // await timeout(1000);
         let source = getKeyByValue(idChart,parent[i]);
         let target = getKeyByValue(idChart,i);
         console.log(source,target);
@@ -94,17 +96,16 @@ function makeHL(parent,graph,V,cyRef,idChart){
         hl.push(cyRef.elements(`node#${source}`));
         hl.push(cyRef.elements(`node#${target}`));
         let edge = cyRef.edges(`edge[source="${source}"][target="${target}"]`);
-        console.log(edge);
         edge.length>0?hl.push(cyRef.edges(`edge[source="${source}"][target="${target}"]`)):hl.push(cyRef.edges(`edge[source="${target}"][target="${source}"]`));
-        console.log(parent[i] + "-" + i + " " + graph[i][parent[i]]);
     }
+    console.log(hl);
     return hl;
 }
  
 // Function to construct and print MST for
 // a graph represented using adjacency
 // matrix representation
-function primMST(graph,V,cyRef,idChart)
+function primMST(graph,V,cyRef,idChart,order,setOrder)
 {
     // Array to store constructed MST
     let parent = [];
@@ -126,7 +127,7 @@ function primMST(graph,V,cyRef,idChart)
     for (let count = 0; count < V - 1; count++)
     {
         // Pick the minimum key vertex from the
-        // set of vertices not yet included in MST
+        // set of vertices not yet included in MST. Render to browser
         let u = minKey(key, mstSet,V);
         // Add the picked vertex to the MST Set
         mstSet[u] = true;
@@ -144,19 +145,18 @@ function primMST(graph,V,cyRef,idChart)
             }
         }
     }
-    const k = makeHL(parent,graph,V,cyRef,idChart);
-    
+    const k = makeHL(parent,graph,V,cyRef,idChart,order,setOrder);
     return k;
 }
 
-const handlePrim = (cyRef,setHL) => {
+const handlePrim = async(cyRef,setHL,order,setOrder) => {
     //construct the graph as param for prim func above. Follow: https://www.geeksforgeeks.org/prims-minimum-spanning-tree-mst-greedy-algo-5/#
     const V = cyRef.nodes();
     const idChart = {};
     V.map((v,i)=>{
         idChart[v.data('id')] = i;
     })
-    const [r, c] = [V.length, V.length]; 
+    const [r,c] = [V.length, V.length]; 
     const graph = Array(r).fill().map(()=>Array(c).fill(0));
     V.map((vertex)=>{
         const neighbors = vertex.neighborhood(function( ele ){
@@ -169,18 +169,20 @@ const handlePrim = (cyRef,setHL) => {
             sTot?graph[idChart[s]][idChart[t]] = parseInt(sTot) : graph[idChart[s]][idChart[t]] = parseInt(cyRef.edges(`edge[source="${t}"][target="${s}"]`).data('weight'));
         })
     });
-    const k = primMST(graph,V.length,cyRef,idChart);
+    const k = primMST(graph,V.length,cyRef,idChart,order,setOrder);
     setHL(k);
-    // console.log(k);
     let i = 0;
-    var highlightNextEle = function(edge){
+    const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
+    var highlightNextEle = async function(edge){
         if( i < k.length ){
             k[i].addClass('highlighted');
             i++;
-            highlightNextEle();
+            setOrder(k[i]);
+            await timeout(2000);
+            await highlightNextEle();
         }
     };
-    highlightNextEle();
+    await highlightNextEle();
 }
 
 //to do (hl stored in a state could cause crash)
@@ -240,7 +242,14 @@ const Prim = (props) =>{
   const inputEdge = React.useRef([]);
   //highlight elements state
   const [hl,setHL] = React.useState(null);
-
+  //render elements
+  const [order,setOrder] = React.useState();
+  const [renderEdges,setRenderEdges] = React.useState([]);
+  console.log(order);
+  renderEdges.map(x=>{console.log(x.data());})
+  React.useEffect(()=>{
+    order&&setRenderEdges([...renderEdges,order])
+  },[order])
   return (
     <>
       {/* Add UI instruction here later */}
@@ -250,14 +259,24 @@ const Prim = (props) =>{
         <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}}/>
         <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE)}>Add edge</Button>
       </div>
-      <Button variant='contained' onClick={()=>{handlePrim(props.cyRef,setHL)}}>Run Prim</Button>
+      <Button variant='contained' onClick={()=>{handlePrim(props.cyRef,setHL,order,setOrder)}}>Run Prim</Button>
       <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef,setHL,hl)}}>Clear Animation</Button>
       <TextField id="outlined-basic" label="Remove Edge" variant="outlined" ref={el => inputEdge.current[1] = el} onChange={(e) => setRemoveEdge(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge)}}>Remove edge</Button>
       <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveNode(props.cyRef,inputNode,removeNode,setRemoveNode)}}>Remove node</Button>
+      <div>
+        {renderEdges.map((edge)=>{
+            if (edge.isEdge()){
+                return(
+                    <div>{`${edge.data().source}-${edge.data().target}`}</div>
+                );
+            }
+        })}
+      </div>
       {duplicateN && <div>Node is already exist</div>}
       {duplicateE && <div>Edge with the same weight is already exist</div>}
+
     </>
   );
 }
