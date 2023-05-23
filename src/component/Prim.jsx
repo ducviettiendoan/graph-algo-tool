@@ -3,6 +3,7 @@ import { Button, TextField } from '@mui/material';
 
 const POSITION_X = 400;
 const POSITION_Y = 250;
+const PRIM_EDGES = [];
 
 const handleAddNode = (addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN) => {
     const random_x = Math.floor(Math.random() * 100) + 1;
@@ -176,9 +177,9 @@ const handlePrim = async(cyRef,setHL,order,setOrder) => {
     var highlightNextEle = async function(edge){
         if( i < k.length ){
             k[i].addClass('highlighted');
-            i++;
             setOrder(k[i]);
-            await timeout(2000);
+            i++;
+            await timeout(1000);
             await highlightNextEle();
         }
     };
@@ -186,7 +187,7 @@ const handlePrim = async(cyRef,setHL,order,setOrder) => {
 }
 
 //to do (hl stored in a state could cause crash)
-const handleRemoveAnimation = (cyRef,setHL,hl) => {
+const handleRemoveAnimation = (cyRef,setHL,hl,setRenderEdges) => {
     console.log(hl);
     if (!hl){
         console.log("No highlighted element");
@@ -203,7 +204,7 @@ const handleRemoveAnimation = (cyRef,setHL,hl) => {
     removeStyleNextEle();
     //reset hl state for next time run Prim 
     setHL(null);
-    console.log(hl);
+    setRenderEdges([]);
 }
 
 // get node k and all edges coming out from it
@@ -245,11 +246,15 @@ const Prim = (props) =>{
   //render elements
   const [order,setOrder] = React.useState();
   const [renderEdges,setRenderEdges] = React.useState([]);
-  console.log(order);
-  renderEdges.map(x=>{console.log(x.data());})
+  //keep track of all considering edges 
+  let ARR = [];
+  //visited edges.
+  let visited = [];
   React.useEffect(()=>{
     order&&setRenderEdges([...renderEdges,order])
   },[order])
+  console.log(renderEdges);
+  //RENDERING: O(n^2) where n is the 
   return (
     <>
       {/* Add UI instruction here later */}
@@ -260,23 +265,51 @@ const Prim = (props) =>{
         <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE)}>Add edge</Button>
       </div>
       <Button variant='contained' onClick={()=>{handlePrim(props.cyRef,setHL,order,setOrder)}}>Run Prim</Button>
-      <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef,setHL,hl)}}>Clear Animation</Button>
+      <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef,setHL,hl,setRenderEdges)}}>Clear Animation</Button>
       <TextField id="outlined-basic" label="Remove Edge" variant="outlined" ref={el => inputEdge.current[1] = el} onChange={(e) => setRemoveEdge(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge)}}>Remove edge</Button>
       <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveNode(props.cyRef,inputNode,removeNode,setRemoveNode)}}>Remove node</Button>
       <div>
-        {renderEdges.map((edge)=>{
-            if (edge.isEdge()){
+        {renderEdges && renderEdges.map((edge)=>{
+            if (edge.isNode()){
+                const neighbors = edge.neighborhood(function(ele){
+                    return ele.isNode();
+                });
+                //create considering edges here
+                neighbors.map(n=>{
+                  const a = `${edge.data().id}-${n.data().id}`;
+                  const b = `${n.data().id}-${edge.data().id}`;
+                  if (!visited.includes(a) && !visited.includes(b)){
+                    ARR.push(a);
+                    visited.push(a);
+                    visited.push(b);
+                  }
+                })
+                // console.log(ARR);
                 return(
-                    <div>{`${edge.data().source}-${edge.data().target}`}</div>
+                  <div>
+                    <span>Considering edges: </span>
+                    {ARR.map(e=>{
+                      return(
+                        <span style={{marginRight: "3px"}}>{e}</span>)})
+                    }
+                  </div>
+                )
+            }
+            if (edge.isEdge()){
+                const a = `${edge.data().source}-${edge.data().target}`;
+                const b = `${edge.data().target}-${edge.data().source}`;
+                ARR = ARR.filter(edge => edge !== a && edge !== b);
+                console.log('after',ARR);
+                return(
+                    <div><span>Minimum edge weight: </span>{`${edge.data().source}-${edge.data().target}`}</div>
                 );
             }
         })}
       </div>
       {duplicateN && <div>Node is already exist</div>}
       {duplicateE && <div>Edge with the same weight is already exist</div>}
-
     </>
   );
 }
