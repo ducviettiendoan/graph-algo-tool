@@ -109,10 +109,9 @@ const handleRemoveNode = (cyRef,inputNode,node,setRemoveNode)=>{
 }
 const handleRemoveEdge = (cyRef,inputEdge,edge,setRemoveEdge) => {
   edge = edge.split(',');
-  console.log(edge);
-  console.log(cyRef);
-  //cy selector
-  const removeEdge = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`);
+  const a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`);
+  const b = cyRef.edges(`edge[source="${edge[1]}"][target="${edge[0]}"]`);
+  const removeEdge = a.length>0?a:b;
   cyRef.remove(removeEdge);
   setRemoveEdge("");
   if (inputEdge.current[1]){

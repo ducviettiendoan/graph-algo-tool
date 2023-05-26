@@ -3,7 +3,6 @@ import { Button, TextField } from '@mui/material';
 
 const POSITION_X = 400;
 const POSITION_Y = 250;
-const PRIM_EDGES = [];
 
 const handleAddNode = (addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN) => {
     const random_x = Math.floor(Math.random() * 100) + 1;
@@ -220,9 +219,10 @@ const handleRemoveNode = (cyRef,inputNode,node,setRemoveNode)=>{
 const handleRemoveEdge = (cyRef,inputEdge,edge,setRemoveEdge) => {
   edge = edge.split(',');
   console.log(edge);
-  console.log(cyRef);
   //cy selector
-  const removeEdge = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`);
+  const a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`);
+  const b = cyRef.edges(`edge[source="${edge[1]}"][target="${edge[0]}"]`);
+  const removeEdge = a.length>0?a:b;
   cyRef.remove(removeEdge);
   setRemoveEdge("");
   if (inputEdge.current[1]){
@@ -253,7 +253,6 @@ const Prim = (props) =>{
   React.useEffect(()=>{
     order&&setRenderEdges([...renderEdges,order])
   },[order])
-  console.log(renderEdges);
   //RENDERING: O(n^2) where n is the 
   return (
     <>
@@ -270,8 +269,10 @@ const Prim = (props) =>{
       <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge)}}>Remove edge</Button>
       <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveNode(props.cyRef,inputNode,removeNode,setRemoveNode)}}>Remove node</Button>
+      {renderEdges && <div style={{marginBottom:"16px", fontWeight: 'bold'}}>Edges to choose are all the edges that are connected to already visited nodes</div>}
       <div>
-        {renderEdges && renderEdges.map((edge)=>{
+        {renderEdges && 
+        renderEdges.map((edge)=>{
             if (edge.isNode()){
                 const neighbors = edge.neighborhood(function(ele){
                     return ele.isNode();
@@ -289,11 +290,20 @@ const Prim = (props) =>{
                 // console.log(ARR);
                 return(
                   <div>
-                    <span>Considering edges: </span>
+                    <span>Edges to choose: </span>
                     {ARR.map(e=>{
                       return(
-                        <span style={{marginRight: "3px"}}>{e}</span>)})
+                        <span style={{marginRight: "5px"}}>{e}</span>)})
                     }
+                    {/* <span style={{marginLeft:"5px"}}>Choosing edges: </span>
+                    {
+                      neighbors.map(n=>{
+                        return (
+                          <span style={{marginRight:"5px"}}>{`${edge.data().id}-${n.data().id}`}</span>
+                        )
+                      })
+                    } */}
+                    <span style={{marginLeft:"5px"}}>Visiting node: {edge.data().id}</span>
                   </div>
                 )
             }
