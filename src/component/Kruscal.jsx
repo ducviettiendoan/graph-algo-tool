@@ -26,9 +26,19 @@ const handleAddNode = (addNode,elements,setElements,nodes,setNodes,cyRef,inputNo
     }
 }
 
-const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE) => {
+const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE,setForceW) => {
   setDuplicateE(false);
     let edge = addEdge.split(',');
+    if (edge.length<3 || edge[2]===''){
+      if (inputEdge.current[0]){
+        inputEdge.current[0].children[1].children[0].value = null;
+      }
+      setForceW(prev=>!prev);
+      setTimeout(() => {
+        setForceW(prev=>!prev);
+      }, 1000);
+      return;
+    }
     //overwrite old weight or return edge already exist if same edge with same weight.
     if (cyRef){
       let a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`).data();
@@ -132,6 +142,8 @@ const Kruskal = (props) =>{
   const inputEdge = React.useRef([]);
   //highlight elements state
   const [hl,setHL] = React.useState(null);
+  //Force edge to have weight
+  const [forceW, setForceW] = React.useState(false);
 
   return (
     <>
@@ -140,7 +152,7 @@ const Kruskal = (props) =>{
         <TextField id="outlined-basic" label="Node" variant="outlined" ref={el=>inputNode.current[0]=el} onChange={(e) => setNewNode(e.target.value)}/>
         <Button variant='contained' onClick={()=>handleAddNode(newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}>Add node</Button>
         <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}}/>
-        <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE)}>Add edge</Button>
+        <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setForceW)}>Add edge</Button>
       </div>
       <Button variant='contained' onClick={()=>{handleKruskal(props.cyRef,setHL)}}>Run Kruscal</Button>
       <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef,hl,setHL)}}>Clear Animation</Button>
@@ -148,6 +160,7 @@ const Kruskal = (props) =>{
       <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge)}}>Remove edge</Button>
       <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveNode(props.cyRef,inputNode,removeNode,setRemoveNode)}}>Remove node</Button>
+      {forceW&&<div style={{color:'red'}}>Please add weight when adding edges</div>}
       {duplicateN && <div>Node is already exist</div>}
       {duplicateE && <div>Edge with the same weight is already exist</div>}
     </>

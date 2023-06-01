@@ -1,10 +1,14 @@
 import React from 'react';
 import { Button, TextField } from '@mui/material';
+// import * as ReactDOM from 'react-dom';
 
 const POSITION_X = 400;
 const POSITION_Y = 250;
+let ROOT=null;
 
-const handleAddNode = (addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN) => {
+const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN) => {
+  if (e && e.key==='Enter'){
+    // console.log('hello');
     const random_x = Math.floor(Math.random() * 100) + 1;
     const add_x = random_x > 50 ? random_x:random_x-100;
     const add_y = Math.floor(Math.random() * 100) + 50;    
@@ -24,11 +28,23 @@ const handleAddNode = (addNode,elements,setElements,nodes,setNodes,cyRef,inputNo
     if (inputNode.current[0]){
       inputNode.current[0].children[1].children[0].value = null;
     }
+  }
 }
 
-const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE) => {
-  setDuplicateE(false);
+const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE,setForceW) => {
+  if (e&&e.key==="Enter"){
+    setDuplicateE(false);
     let edge = addEdge.split(',');
+    if (edge.length<3 || edge[2]===''){
+      if (inputEdge.current[0]){
+        inputEdge.current[0].children[1].children[0].value = null;
+      }
+      setForceW(prev=>!prev);
+      setTimeout(() => {
+        setForceW(prev=>!prev);
+      }, 1000);
+      return;
+    }
     //overwrite old weight or return edge already exist if same edge with same weight.
     if (cyRef){
       let a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`).data();
@@ -59,6 +75,7 @@ const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge,setDup
     if (inputEdge.current[0]){
       inputEdge.current[0].children[1].children[0].value = null;
     }
+  }
 }
 
 function minKey(key,mstSet,V)
@@ -102,9 +119,7 @@ const makeHL = (parent,graph,V,cyRef,idChart,order,setOrder) => {
     return hl;
 }
  
-// Function to construct and print MST for
-// a graph represented using adjacency
-// matrix representation
+// Function to construct and print MST for  a graph represented using adjacency in matrix representation
 function primMST(graph,V,cyRef,idChart,order,setOrder)
 {
     // Array to store constructed MST
@@ -126,15 +141,12 @@ function primMST(graph,V,cyRef,idChart,order,setOrder)
     // The MST will have V vertices
     for (let count = 0; count < V - 1; count++)
     {
-        // Pick the minimum key vertex from the
-        // set of vertices not yet included in MST. Render to browser
+        // Pick the minimum key vertex from the set of vertices not yet included in MST. Render to browser
         let u = minKey(key, mstSet,V);
         // Add the picked vertex to the MST Set
         mstSet[u] = true;
-        // Update key value and parent index of
-        // the adjacent vertices of the picked vertex.
-        // Consider only those vertices which are not
-        // yet included in MST
+        // Update key value and parent index of the adjacent vertices of the picked vertex. 
+        // Consider only those vertices which are not yet included in MST
         for (let v = 0; v < V; v++){
             // graph[u][v] is non zero only for adjacent vertices of m
             // mstSet[v] is false for vertices not yet included in MST
@@ -186,8 +198,7 @@ const handlePrim = async(cyRef,setHL,order,setOrder) => {
 }
 
 //to do (hl stored in a state could cause crash)
-const handleRemoveAnimation = (cyRef,setHL,hl,setRenderEdges) => {
-    console.log(hl);
+const handleRemoveAnimation = (cyRef,setHL,hl,setRenderEdges,setOrder) => {
     if (!hl){
         console.log("No highlighted element");
         return;
@@ -204,6 +215,7 @@ const handleRemoveAnimation = (cyRef,setHL,hl,setRenderEdges) => {
     //reset hl state for next time run Prim 
     setHL(null);
     setRenderEdges([]);
+    setOrder(null);
 }
 
 // get node k and all edges coming out from it
@@ -246,30 +258,34 @@ const Prim = (props) =>{
   //render elements
   const [order,setOrder] = React.useState();
   const [renderEdges,setRenderEdges] = React.useState([]);
+  //Force edge to have weight
+  const [forceW, setForceW] = React.useState(false);
   //keep track of all considering edges 
   let ARR = [];
   //visited edges.
   let visited = [];
   React.useEffect(()=>{
     order&&setRenderEdges([...renderEdges,order])
-  },[order])
+  },[order,forceW])
   //RENDERING: O(n^2) where n is the 
+  // onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
   return (
     <>
       {/* Add UI instruction here later */}
-      <div>
-        <TextField id="outlined-basic" label="Node" variant="outlined" ref={el=>inputNode.current[0]=el} onChange={(e) => setNewNode(e.target.value)}/>
-        <Button variant='contained' onClick={()=>handleAddNode(newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}>Add node</Button>
-        <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}}/>
-        <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE)}>Add edge</Button>
+      <div id="hello">
+        <TextField id="outlined-basic" label="Node" variant="outlined" ref={el=>inputNode.current[0]=el} onChange={(e) => setNewNode(e.target.value)} onKeyDown={(e)=>handleAddNode(e,newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}/>
+        {/* <Button variant='contained' onKeyPress={(e)=>handleAddNode(newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}>Add node</Button> */}
+        <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}} onKeyDown={(e)=>handleAddEdge(e,newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setForceW)}/>
+        {/* <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setForceW)}>Add edge</Button> */}
       </div>
       <Button variant='contained' onClick={()=>{handlePrim(props.cyRef,setHL,order,setOrder)}}>Run Prim</Button>
-      <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef,setHL,hl,setRenderEdges)}}>Clear Animation</Button>
+      <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef,setHL,hl,setRenderEdges,setOrder)}}>Clear Animation</Button>
       <TextField id="outlined-basic" label="Remove Edge" variant="outlined" ref={el => inputEdge.current[1] = el} onChange={(e) => setRemoveEdge(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge)}}>Remove edge</Button>
       <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveNode(props.cyRef,inputNode,removeNode,setRemoveNode)}}>Remove node</Button>
       {renderEdges && <div style={{marginBottom:"16px", fontWeight: 'bold'}}>Edges to choose are all the edges that are connected to already visited nodes</div>}
+      {forceW&&<div style={{color:"red"}}>Please include weight when adding edges</div>}
       <div>
         {renderEdges && 
         renderEdges.map((edge)=>{
@@ -295,14 +311,6 @@ const Prim = (props) =>{
                       return(
                         <span style={{marginRight: "5px"}}>{e}</span>)})
                     }
-                    {/* <span style={{marginLeft:"5px"}}>Choosing edges: </span>
-                    {
-                      neighbors.map(n=>{
-                        return (
-                          <span style={{marginRight:"5px"}}>{`${edge.data().id}-${n.data().id}`}</span>
-                        )
-                      })
-                    } */}
                     <span style={{marginLeft:"5px"}}>Visiting node: {edge.data().id}</span>
                   </div>
                 )
