@@ -4,7 +4,8 @@ import { Button, TextField } from '@mui/material';
 const POSITION_X = 400;
 const POSITION_Y = 250;
 
-const handleAddNode = (addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN) => {
+const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN) => {
+  if (e.key==='Enter'){
     const random_x = Math.floor(Math.random() * 100) + 1;
     const add_x = random_x > 50 ? random_x:random_x-100;
     const add_y = Math.floor(Math.random() * 100) + 50;    
@@ -24,10 +25,12 @@ const handleAddNode = (addNode,elements,setElements,nodes,setNodes,cyRef,inputNo
     if (inputNode.current[0]){
       inputNode.current[0].children[1].children[0].value = null;
     }
+  }
 }
 
-const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE,setForceW) => {
-  setDuplicateE(false);
+const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE,setForceW) => {
+  if (e.key==='Enter'){
+    setDuplicateE(false);
     let edge = addEdge.split(',');
     if (edge.length<3 || edge[2]===''){
       if (inputEdge.current[0]){
@@ -69,6 +72,7 @@ const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge,setDup
     if (inputEdge.current[0]){
       inputEdge.current[0].children[1].children[0].value = null;
     }
+  }
 }
 
 //handle animation in async await as a recursive highlightNextEle runs
@@ -149,10 +153,10 @@ const Kruskal = (props) =>{
     <>
       {/* Add UI instruction here later */}
       <div>
-        <TextField id="outlined-basic" label="Node" variant="outlined" ref={el=>inputNode.current[0]=el} onChange={(e) => setNewNode(e.target.value)}/>
-        <Button variant='contained' onClick={()=>handleAddNode(newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}>Add node</Button>
-        <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}}/>
-        <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setForceW)}>Add edge</Button>
+        <TextField id="outlined-basic" label="Node" variant="outlined" ref={el=>inputNode.current[0]=el} onChange={(e) => setNewNode(e.target.value)} onKeyDown={(e)=> handleAddNode(e,newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}/>
+        {/* <Button variant='contained' onClick={()=>handleAddNode(newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}>Add node</Button> */}
+        <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}} onKeyDown={(e)=>handleAddEdge(e,newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setForceW)}/>
+        {/* <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setForceW)}>Add edge</Button> */}
       </div>
       <Button variant='contained' onClick={()=>{handleKruskal(props.cyRef,setHL)}}>Run Kruscal</Button>
       <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef,hl,setHL)}}>Clear Animation</Button>

@@ -4,7 +4,6 @@ import { Button, TextField } from '@mui/material';
 
 const POSITION_X = 400;
 const POSITION_Y = 250;
-let ROOT=null;
 
 const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN) => {
   if (e && e.key==='Enter'){
@@ -274,9 +273,7 @@ const Prim = (props) =>{
       {/* Add UI instruction here later */}
       <div id="hello">
         <TextField id="outlined-basic" label="Node" variant="outlined" ref={el=>inputNode.current[0]=el} onChange={(e) => setNewNode(e.target.value)} onKeyDown={(e)=>handleAddNode(e,newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}/>
-        {/* <Button variant='contained' onKeyPress={(e)=>handleAddNode(newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}>Add node</Button> */}
         <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}} onKeyDown={(e)=>handleAddEdge(e,newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setForceW)}/>
-        {/* <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setForceW)}>Add edge</Button> */}
       </div>
       <Button variant='contained' onClick={()=>{handlePrim(props.cyRef,setHL,order,setOrder)}}>Run Prim</Button>
       <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef,setHL,hl,setRenderEdges,setOrder)}}>Clear Animation</Button>
