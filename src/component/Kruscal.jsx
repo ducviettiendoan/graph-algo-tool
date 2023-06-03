@@ -32,7 +32,7 @@ const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setD
   if (e.key==='Enter'){
     setDuplicateE(false);
     let edge = addEdge.split(',');
-    if (edge.length<3 || edge[2]===''){
+    if (edge.length<3 || edge[2]==='' || isNaN(edge[2])){
       if (inputEdge.current[0]){
         inputEdge.current[0].children[1].children[0].value = null;
       }

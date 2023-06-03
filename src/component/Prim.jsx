@@ -7,7 +7,6 @@ const POSITION_Y = 250;
 
 const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN) => {
   if (e && e.key==='Enter'){
-    // console.log('hello');
     const random_x = Math.floor(Math.random() * 100) + 1;
     const add_x = random_x > 50 ? random_x:random_x-100;
     const add_y = Math.floor(Math.random() * 100) + 50;    
@@ -34,7 +33,7 @@ const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setD
   if (e&&e.key==="Enter"){
     setDuplicateE(false);
     let edge = addEdge.split(',');
-    if (edge.length<3 || edge[2]===''){
+    if (edge.length<3 || edge[2]==='' || isNaN(edge[2])){
       if (inputEdge.current[0]){
         inputEdge.current[0].children[1].children[0].value = null;
       }
@@ -272,8 +271,18 @@ const Prim = (props) =>{
     <>
       {/* Add UI instruction here later */}
       <div id="hello">
-        <TextField id="outlined-basic" label="Node" variant="outlined" ref={el=>inputNode.current[0]=el} onChange={(e) => setNewNode(e.target.value)} onKeyDown={(e)=>handleAddNode(e,newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}/>
-        <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}} onKeyDown={(e)=>handleAddEdge(e,newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setForceW)}/>
+        <TextField id="outlined-basic" label="Node" 
+        variant="outlined" 
+        ref={el=>inputNode.current[0]=el} 
+        onChange={(e) => setNewNode(e.target.value)} 
+        onKeyDown={(e)=>handleAddNode(e,newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}
+        />
+        <TextField id="outlined-basic" label="Edge" 
+        variant="outlined" 
+        ref={el=>inputEdge.current[0]=el} 
+        onChange={(e) => {setNewEdge(e.target.value)}} 
+        onKeyDown={(e)=>handleAddEdge(e,newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setForceW)}
+        />
       </div>
       <Button variant='contained' onClick={()=>{handlePrim(props.cyRef,setHL,order,setOrder)}}>Run Prim</Button>
       <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef,setHL,hl,setRenderEdges,setOrder)}}>Clear Animation</Button>
