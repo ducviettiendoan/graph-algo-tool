@@ -62,17 +62,20 @@ const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setD
 }
 
 const handleAnimationBfs = async(cyRef,begin,order,setOrder) => {
+    const queue = [];
     var bfs = cyRef.elements().bfs(`#${begin}`, function(){});
     var i = 0;
     const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
+    console.log(bfs.path);
     var highlightNextEle = async function(){
       if( i < bfs.path.length ){
         bfs.path[i].addClass('highlighted');
         if (bfs.path[i].isNode()){
-            setOrder(bfs.path[i]._private.data.id);
+            setOrder(bfs.path[i]);
+            queue.push(bfs.path[i]._private.data.id);
         }
         i++;
-        await timeout(1000);
+        await timeout(750);
         await highlightNextEle();
       }
     };
@@ -135,7 +138,19 @@ const Bfs = (props) =>{
   const inputNode = React.useRef([]);
   const inputEdge = React.useRef([]);
   React.useEffect(()=>{ 
-    setOrderRender([...orderRender,order]);
+    console.log(orderRender);
+    if (orderRender[0] && orderRender.length>1){
+      const head = props.cyRef.elements(`node#${orderRender[0]}`)
+      console.log('H',head);
+      const neighbors = head.neighborhood(function( ele ){
+        return ele.isNode();
+      });
+      console.log('neigh',neighbors);
+      if (!neighbors.includes(order)){
+        setOrderRender(orderRender.shift());
+      }
+    }
+    order && setOrderRender([...orderRender,order._private.data.id]);
   },[order]);
   return (
     <>
@@ -151,7 +166,7 @@ const Bfs = (props) =>{
       <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge)}}>Remove edge</Button>
       <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveNode(props.cyRef,inputNode,removeNode,setRemoveNode)}}>Remove node</Button>
-      <div>
+      <div> Queue: 
         {orderRender.map((node)=>{
           return(<span>{node}</span>);
         })}
