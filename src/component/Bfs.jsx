@@ -12,7 +12,6 @@ const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,input
     const add_y = Math.floor(Math.random() * 100) + 50;
     //find whether the node exists in cyRef
     if (cyRef && cyRef.elements(`node#${addNode}`).size()>0){
-      console.log(cyRef.elements(`node#${addNode}`).size());
       setDuplicateN(true);
       return;
     }
@@ -62,24 +61,22 @@ const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setD
 }
 
 const handleAnimationBfs = async(cyRef,begin,order,setOrder) => {
-    const queue = [];
     var bfs = cyRef.elements().bfs(`#${begin}`, function(){});
     var i = 0;
     const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
-    console.log(bfs.path);
     var highlightNextEle = async function(){
       if( i < bfs.path.length ){
         bfs.path[i].addClass('highlighted');
         if (bfs.path[i].isNode()){
             setOrder(bfs.path[i]);
-            queue.push(bfs.path[i]._private.data.id);
         }
         i++;
-        await timeout(750);
+        await timeout(1000);
         await highlightNextEle();
       }
     };
     await highlightNextEle();
+    setOrder(null);
 }
 
 const handleRemoveAnimation = (cyRef,begin,setOrderRender) => {
@@ -128,25 +125,22 @@ const Bfs = (props) =>{
   const [newEdge, setNewEdge] = React.useState(null);
   const [nodes, setNodes] = React.useState([]);
   const [rootNode, setRootNode] = React.useState();
-  const [order, setOrder] = React.useState();
+  const [order, setOrder] = React.useState(null);
   const [orderRender, setOrderRender] = React.useState([]);
   const [removeEdge, setRemoveEdge] = React.useState();
   const [removeNode, setRemoveNode] = React.useState();
   const [duplicateN, setDuplicateN] = React.useState(false);
   const [duplicateE, setDuplicateE] = React.useState(false);
   //this 2 ref are used for multiple components
-  const inputNode = React.useRef([]);
+  const inputNode = React.useRef([]); 
   const inputEdge = React.useRef([]);
   React.useEffect(()=>{ 
-    console.log(orderRender);
-    if (orderRender[0] && orderRender.length>1){
+    if (orderRender[0]){
       const head = props.cyRef.elements(`node#${orderRender[0]}`)
-      console.log('H',head);
       const neighbors = head.neighborhood(function( ele ){
         return ele.isNode();
       });
-      console.log('neigh',neighbors);
-      if (!neighbors.includes(order)){
+      if (neighbors.length < 2 || neighbors.includes(order)){
         setOrderRender(orderRender.shift());
       }
     }
