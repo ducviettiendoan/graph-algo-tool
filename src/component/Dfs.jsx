@@ -23,12 +23,6 @@ const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,input
     console.log(new_node);
     if (cyRef){
       cyRef.add(new_node);
-      //get new_node from cyRef as element
-      // const eles = cyRef._private.elements;
-      // const ele = eles[eles.length-1];
-      // console.log(ele);
-      // const tippy = initTippy(ele,'hello');
-      // tippy.show();
     }
     if (inputNode.current[0]){
       inputNode.current[0].children[1].children[0].value = null;
@@ -84,19 +78,19 @@ const handleAnimationDfs = async (cyRef,begin,order,setOrder,setOrderRender) => 
         extract[1] = nodeOrder;
         dfs.path[i].data().label = extract.join(',')
       }
-      await timeout(500);
+      await timeout(1000);
       console.log('before: ',i);
       await highlightNextEle(i+1,nodeOrder);
       total = Math.max(total,nodeOrder);
       if (dfs.path[i].isNode()){
-        console.log(dfs.path[i]._private.data.id,nodeOrder);
+        console.log(dfs.path[i]._private.data.id,nodeOrder,total+(total-nodeOrder+1));
         const extract = dfs.path[i].data().label.split(',')
         //extract end
         extract[2] = total+(total-nodeOrder+1);
         dfs.path[i].data().label = extract.join(',')
       }
-      await timeout(500);
       dfs.path[i].removeClass('highlighted');
+      await timeout(1000);
     }
   };
   //put await as highlightNextEle returns a Promise
@@ -109,7 +103,7 @@ const handleAnimationDfs = async (cyRef,begin,order,setOrder,setOrderRender) => 
       extract[2] = -1;
       dfs.path[i].data().label = extract.join(',')
       //This line for rerendering all node with resert start,end only.
-      dfs.path[i].removeClass('highlighted');
+      dfs.path[i].removeClass('resetDfs');
     }
   })
   setOrder(null);

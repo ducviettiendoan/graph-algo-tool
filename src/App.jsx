@@ -48,6 +48,9 @@ function App() {
         .css({
           'content': 'data(weight)'
         })
+      //dupmy css to make rerender on finish DFS
+      .selector('.resetDfs')
+        .css({})
     cyRef.current.zoomingEnabled(false);
   }
   return (
