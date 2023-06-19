@@ -26,7 +26,7 @@ function App() {
       .selector('node')
         .style({'label':'data(id)'})
         .css({
-          'content': 'data(id)'
+          'content': 'data(label)',
         })
       .selector('edge')
         .css({

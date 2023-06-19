@@ -1,8 +1,7 @@
 import React from 'react';
 import { Button, TextField } from '@mui/material';
-
-const POSITION_X = 400;
-const POSITION_Y = 250;
+import tippy from 'tippy.js';
+import {dObj} from '../static.js';
 
 const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN) => {
   if (e.key==='Enter'){
@@ -16,17 +15,25 @@ const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,input
       return;
     }
     let new_node = {};
-    elements.length === 0 ? new_node = { data: { id: `${addNode}`, label: `Node ${addNode}` }, position: { x: POSITION_X, y: POSITION_Y} } : 
-    new_node = { data: { id: `${addNode}`, label: `Node ${addNode}` }, position: { x: elements[0].position.x+add_x, y: elements[0].position.y+add_y} } //position based on 1st node
+    //default node start & end = -1
+    elements.length === 0 ? new_node = { data: { id: `${addNode}`, label: `${addNode},${dObj.START},${dObj.END}`}, position: { x: dObj.POSITION_X, y: dObj.POSITION_Y} } : 
+    new_node = { data: { id: `${addNode}`, label: `${addNode},${dObj.START},${dObj.END}` }, position: { x: elements[0].position.x+add_x, y: elements[0].position.y+add_y} } //position based on 1st node
     setElements([...elements, new_node]);
     setNodes([...nodes,new_node.data.id]);
-    console.log(cyRef);
+    console.log(new_node);
     if (cyRef){
       cyRef.add(new_node);
+      //get new_node from cyRef as element
+      // const eles = cyRef._private.elements;
+      // const ele = eles[eles.length-1];
+      // console.log(ele);
+      // const tippy = initTippy(ele,'hello');
+      // tippy.show();
     }
     if (inputNode.current[0]){
       inputNode.current[0].children[1].children[0].value = null;
     }
+    console.log(cyRef._private.elements);
   }
 }
 
@@ -58,44 +65,59 @@ const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setD
 }
 
 //handle animation in async await as a recursive highlightNextEle runs
-const handleAnimationDfs = async (cyRef,begin,order,setOrder) => {
+const handleAnimationDfs = async (cyRef,begin,order,setOrder,setOrderRender) => {
   var dfs = cyRef.elements().dfs(`#${begin}`,function(){});
-  var i = 0;
   console.log(dfs);
   //need this to delay the highlight for 1s.
   const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
   //async await in recursion -> need to timeout before another recursive call.
-  var highlightNextEle = async function(){
+  let total = 0;
+  var highlightNextEle = async function(i,nodeOrder){
     if( i < dfs.path.length ){
       dfs.path[i].addClass('highlighted');
       if (dfs.path[i].isNode()){
+        nodeOrder += 1;
         setOrder(dfs.path[i]._private.data.id);
+        //ensure label in form of str with colon seperated, no spaces
+        const extract = dfs.path[i].data().label.split(',')
+        //extract start
+        extract[1] = nodeOrder;
+        dfs.path[i].data().label = extract.join(',')
       }
-      i++;
-      await timeout(1000);
-      await highlightNextEle();
+      await timeout(500);
+      console.log('before: ',i);
+      await highlightNextEle(i+1,nodeOrder);
+      total = Math.max(total,nodeOrder);
+      if (dfs.path[i].isNode()){
+        console.log(dfs.path[i]._private.data.id,nodeOrder);
+        const extract = dfs.path[i].data().label.split(',')
+        //extract end
+        extract[2] = total+(total-nodeOrder+1);
+        dfs.path[i].data().label = extract.join(',')
+      }
+      await timeout(500);
+      dfs.path[i].removeClass('highlighted');
     }
   };
   //put await as highlightNextEle returns a Promise
-  await highlightNextEle();
+  await highlightNextEle(0,0);
+  dfs.path.map((ele,i)=>{
+    if (ele.isNode()){
+      const extract = ele.data().label.split(',')
+      //reset start, end
+      extract[1] = -1;
+      extract[2] = -1;
+      dfs.path[i].data().label = extract.join(',')
+      //This line for rerendering all node with resert start,end only.
+      dfs.path[i].removeClass('highlighted');
+    }
+  })
+  setOrder(null);
+  setOrderRender([]);
 }
 const handleDfs = async(cyRef,begin,order,setOrder,setOrderRender) => {
-  await handleAnimationDfs(cyRef,begin,order,setOrder);
-  await handleRemoveAnimation(cyRef, begin,setOrderRender);
-}
-
-const handleRemoveAnimation = (cyRef,begin,setOrderRender) => {
-  var dfs = cyRef.elements().dfs(`#${begin}`, function(){});
-  var i = 0;
-  var removeStyleNextEle = function(){
-    if( i < dfs.path.length ){
-      dfs.path[i].removeClass('highlighted');
-      i++;
-    }
-    setTimeout(removeStyleNextEle,0);
-  };
-  removeStyleNextEle();
-  setOrderRender([]);
+  await handleAnimationDfs(cyRef,begin,order,setOrder,setOrderRender);
+  // await handleRemoveAnimation(cyRef, begin,setOrderRender);
 }
 
 // get node k and all edges coming out from it
@@ -132,10 +154,10 @@ const Dfs = (props) =>{
   const [removeNode, setRemoveNode] = React.useState();
   const [duplicateN, setDuplicateN] = React.useState(false);
   const [duplicateE, setDuplicateE] = React.useState(false);
+  const [reset,setReset] = React.useState(false);
   //this 2 ref are used for multiple components
   const inputNode = React.useRef([]);
   const inputEdge = React.useRef([]);
-
 
   React.useEffect(()=>{
     setOrderRender([...orderRender,order]);
