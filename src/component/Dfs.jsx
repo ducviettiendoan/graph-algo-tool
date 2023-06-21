@@ -59,59 +59,69 @@ const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setD
 }
 
 //handle animation in async await as a recursive highlightNextEle runs
-const handleAnimationDfs = async (cyRef,begin,order,setOrder,setOrderRender) => {
+const handleAnimationDfs = async (cyRef,begin,order,setOrder,setOrderRender,visit,time) => {
   var dfs = cyRef.elements().dfs(`#${begin}`,function(){});
   console.log(dfs);
   //need this to delay the highlight for 1s.
   const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
   //async await in recursion -> need to timeout before another recursive call.
   let total = 0;
-  var highlightNextEle = async function(i,nodeOrder){
+  var highlightNextEle = async function(i,nodeOrder,visit){
     if( i < dfs.path.length ){
       dfs.path[i].addClass('highlighted');
       if (dfs.path[i].isNode()){
+        const node_id = dfs.path[i]._private.data.id
+        if (!visit.has(node_id)){visit.add(node_id)}
         nodeOrder += 1;
-        setOrder(dfs.path[i]._private.data.id);
+        setOrder(node_id);
         //ensure label in form of str with colon seperated, no spaces
         const extract = dfs.path[i].data().label.split(',')
         //extract start
-        extract[1] = nodeOrder;
+        extract[1] = nodeOrder+time;
         dfs.path[i].data().label = extract.join(',')
       }
       await timeout(1000);
       console.log('before: ',i);
-      await highlightNextEle(i+1,nodeOrder);
+      await highlightNextEle(i+1,nodeOrder,visit);
       total = Math.max(total,nodeOrder);
       if (dfs.path[i].isNode()){
         console.log(dfs.path[i]._private.data.id,nodeOrder,total+(total-nodeOrder+1));
         const extract = dfs.path[i].data().label.split(',')
         //extract end
-        extract[2] = total+(total-nodeOrder+1);
+        extract[2] = total+(total-nodeOrder+1)+time;
         dfs.path[i].data().label = extract.join(',')
       }
       dfs.path[i].removeClass('highlighted');
       await timeout(1000);
+      return total+(total-nodeOrder+1)+time;
     }
   };
   //put await as highlightNextEle returns a Promise
-  await highlightNextEle(0,0);
-  dfs.path.map((ele,i)=>{
-    if (ele.isNode()){
-      const extract = ele.data().label.split(',')
+  const finishTime = await highlightNextEle(0,0,visit);
+  setOrder(null);
+  setOrderRender([]);
+  return finishTime;
+}
+const handleDfs = async(cyRef,begin,order,setOrder,setOrderRender) => {
+  let visit = new Set();
+  let time = await handleAnimationDfs(cyRef,begin,order,setOrder,setOrderRender,visit,0);
+  // console.log(time);
+  const nodes = cyRef.nodes().map((node)=>{return node.data('id')})
+  console.log(nodes);
+  for (let i=0; i<nodes.length; i++){
+    if (!visit.has(nodes[i])){
+      time = await handleAnimationDfs(cyRef,nodes[i],order,setOrder,setOrderRender,visit,time);
+    }
+  }
+  cyRef.nodes().map((ele)=>{
+      const extract = ele.data('label').split(',')
       //reset start, end
       extract[1] = -1;
       extract[2] = -1;
-      dfs.path[i].data().label = extract.join(',')
+      ele.data().label = extract.join(',');
       //This line for rerendering all node with resert start,end only.
-      dfs.path[i].removeClass('resetDfs');
-    }
+      ele.removeClass('resetDfs');
   })
-  setOrder(null);
-  setOrderRender([]);
-}
-const handleDfs = async(cyRef,begin,order,setOrder,setOrderRender) => {
-  await handleAnimationDfs(cyRef,begin,order,setOrder,setOrderRender);
-  // await handleRemoveAnimation(cyRef, begin,setOrderRender);
 }
 
 // get node k and all edges coming out from it
