@@ -2,6 +2,7 @@ import React from 'react';
 import { Button, TextField } from '@mui/material';
 import tippy from 'tippy.js';
 import {dObj} from '../static.js';
+import DfsDetail from "./sbs/DfsDetail.jsx";
 
 const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN) => {
   if (e.key==='Enter'){
@@ -58,6 +59,7 @@ const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setD
 //handle animation in async await as a recursive highlightNextEle runs
 const handleAnimationDfs = async (cyRef,begin,order,setOrder,setOrderRender,visit,time) => {
   var dfs = cyRef.elements().dfs(`#${begin}`,function(){});
+  console.log("DFS origin: ",dfs);
   //need this to delay the highlight for 1s.
   const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
   //async await in recursion -> need to timeout before another recursive call.
@@ -180,6 +182,8 @@ const Dfs = (props) =>{
       </div>
       {duplicateN && <div>Node is already exist</div>}
       {duplicateE && <div>Edge is already exist</div>}
+      {/* Add new route */}
+      <DfsDetail cyRef={props.cyRef}/>
     </>
   );
 }
