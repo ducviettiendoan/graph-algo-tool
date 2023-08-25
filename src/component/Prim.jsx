@@ -11,7 +11,6 @@ const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,input
     const add_x = random_x > 50 ? random_x:random_x-100;
     const add_y = Math.floor(Math.random() * 100) + 50;    
     if (cyRef && cyRef.elements(`node#${addNode}`).size()>0){
-      console.log(cyRef.elements(`node#${addNode}`).size());
       setDuplicateN(true);
       return;
     }
@@ -47,7 +46,6 @@ const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setD
     if (cyRef){
       let a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`).data();
       let b = cyRef.edges(`edge[source="${edge[1]}"][target="${edge[0]}"]`).data();
-      console.log(a,b,cyRef);
       let findEdge;
       a ? findEdge = a : findEdge = b;
       if (findEdge){
@@ -97,23 +95,21 @@ function getKeyByValue(object, value) {
 }
 // A utility function to print the
 // constructed MST stored in parent[]
-const makeHL = (parent,graph,V,cyRef,idChart,order,setOrder) => {
+const makeHL = (parent,orderHL,V,cyRef,idChart) => {
     //add highlight on printing out selected edges.
     // const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
     const hl = [];
     for (let i = 1; i < V; i++){
         //convert number to node id
-        // await timeout(1000);
-        let source = getKeyByValue(idChart,parent[i]);
-        let target = getKeyByValue(idChart,i);
-        console.log(source,target);
+        let targetId = orderHL[i]
+        let source = getKeyByValue(idChart,parent[targetId]);
+        let target = getKeyByValue(idChart,targetId);
         //addClass
         hl.push(cyRef.elements(`node#${source}`));
         hl.push(cyRef.elements(`node#${target}`));
         let edge = cyRef.edges(`edge[source="${source}"][target="${target}"]`);
         edge.length>0?hl.push(cyRef.edges(`edge[source="${source}"][target="${target}"]`)):hl.push(cyRef.edges(`edge[source="${target}"][target="${source}"]`));
     }
-    console.log(hl);
     return hl;
 }
  
@@ -126,6 +122,8 @@ function primMST(graph,V,cyRef,idChart,order,setOrder)
     let key = [];
     // To represent set of vertices included in MST
     let mstSet = [];
+    //order to highlight
+    let orderHL = [];
     // Initialize all keys as INFINITE
     for (let i = 0; i < V; i++){
         key[i] = Number.MAX_VALUE;
@@ -137,10 +135,11 @@ function primMST(graph,V,cyRef,idChart,order,setOrder)
     parent[0] = -1; // First node is always root of MST
  
     // The MST will have V vertices
-    for (let count = 0; count < V - 1; count++)
+    for (let count = 0; count < V; count++)
     {
         // Pick the minimum key vertex from the set of vertices not yet included in MST. Render to browser
         let u = minKey(key, mstSet,V);
+        orderHL.push(u);
         // Add the picked vertex to the MST Set
         mstSet[u] = true;
         // Update key value and parent index of the adjacent vertices of the picked vertex. 
@@ -155,7 +154,7 @@ function primMST(graph,V,cyRef,idChart,order,setOrder)
             }
         }
     }
-    const k = makeHL(parent,graph,V,cyRef,idChart,order,setOrder);
+    const k = makeHL(parent,orderHL,V,cyRef,idChart);
     return k;
 }
 
@@ -228,7 +227,6 @@ const handleRemoveNode = (cyRef,inputNode,node,setRemoveNode)=>{
 }
 const handleRemoveEdge = (cyRef,inputEdge,edge,setRemoveEdge) => {
   edge = edge.split(',');
-  console.log(edge);
   //cy selector
   const a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`);
   const b = cyRef.edges(`edge[source="${edge[1]}"][target="${edge[0]}"]`);
@@ -309,7 +307,6 @@ const Prim = (props) =>{
                     visited.push(b);
                   }
                 })
-                // console.log(ARR);
                 return(
                   <div>
                     <span>Edges to choose: </span>
@@ -325,7 +322,6 @@ const Prim = (props) =>{
                 const a = `${edge.data().source}-${edge.data().target}`;
                 const b = `${edge.data().target}-${edge.data().source}`;
                 ARR = ARR.filter(edge => edge !== a && edge !== b);
-                console.log('after',ARR);
                 return(
                     <div><span>Minimum edge weight: </span>{`${edge.data().source}-${edge.data().target}`}</div>
                 );
