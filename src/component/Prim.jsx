@@ -1,12 +1,15 @@
 import React from 'react';
 import { Button, TextField } from '@mui/material';
 // import * as ReactDOM from 'react-dom';
+import { primMST } from '../util/util';
+import PrimDetail from './sbs/PrimDetail';
 
 const POSITION_X = 400;
 const POSITION_Y = 250;
 
-const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN) => {
+const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN,setSbs) => {
   if (e && e.key==='Enter'){
+    setSbs(false);
     const random_x = Math.floor(Math.random() * 100) + 1;
     const add_x = random_x > 50 ? random_x:random_x-100;
     const add_y = Math.floor(Math.random() * 100) + 50;    
@@ -28,9 +31,10 @@ const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,input
   }
 }
 
-const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE,setForceW) => {
+const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE,setForceW,setSbs) => {
   if (e&&e.key==="Enter"){
     setDuplicateE(false);
+    setSbs(false);
     let edge = addEdge.split(',');
     if (edge.length<3 || edge[2]==='' || isNaN(edge[2])){
       if (inputEdge.current[0]){
@@ -74,90 +78,6 @@ const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setD
   }
 }
 
-function minKey(key,mstSet,V)
-{
-    // Initialize min value
-    let min = Number.MAX_VALUE;
-    let min_index;
- 
-    for (let v = 0; v < V; v++){
-        if (mstSet[v] === false && key[v] < min){
-            min = key[v];
-            min_index = v;
-        }
-    }
-    return min_index;
-}
- 
-//utility to find key by value on Obj
-function getKeyByValue(object, value) {
-    return Object.keys(object).find(key => object[key] === value);
-}
-// A utility function to print the
-// constructed MST stored in parent[]
-const makeHL = (parent,orderHL,V,cyRef,idChart) => {
-    //add highlight on printing out selected edges.
-    // const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
-    const hl = [];
-    for (let i = 1; i < V; i++){
-        //convert number to node id
-        let targetId = orderHL[i]
-        let source = getKeyByValue(idChart,parent[targetId]);
-        let target = getKeyByValue(idChart,targetId);
-        //addClass
-        hl.push(cyRef.elements(`node#${source}`));
-        hl.push(cyRef.elements(`node#${target}`));
-        let edge = cyRef.edges(`edge[source="${source}"][target="${target}"]`);
-        edge.length>0?hl.push(cyRef.edges(`edge[source="${source}"][target="${target}"]`)):hl.push(cyRef.edges(`edge[source="${target}"][target="${source}"]`));
-    }
-    return hl;
-}
- 
-// Function to construct and print MST for  a graph represented using adjacency in matrix representation
-function primMST(graph,V,cyRef,idChart,order,setOrder)
-{
-    // Array to store constructed MST
-    let parent = [];
-    // Key values used to pick minimum weight edge in cut
-    let key = [];
-    // To represent set of vertices included in MST
-    let mstSet = [];
-    //order to highlight
-    let orderHL = [];
-    // Initialize all keys as INFINITE
-    for (let i = 0; i < V; i++){
-        key[i] = Number.MAX_VALUE;
-        mstSet[i] = false;
-    }
-    // Always include first 1st vertex in MST.
-    // Make key 0 so that this vertex is picked as first vertex.
-    key[0] = 0;
-    parent[0] = -1; // First node is always root of MST
- 
-    // The MST will have V vertices
-    for (let count = 0; count < V; count++)
-    {
-        // Pick the minimum key vertex from the set of vertices not yet included in MST. Render to browser
-        let u = minKey(key, mstSet,V);
-        orderHL.push(u);
-        // Add the picked vertex to the MST Set
-        mstSet[u] = true;
-        // Update key value and parent index of the adjacent vertices of the picked vertex. 
-        // Consider only those vertices which are not yet included in MST
-        for (let v = 0; v < V; v++){
-            // graph[u][v] is non zero only for adjacent vertices of m
-            // mstSet[v] is false for vertices not yet included in MST
-            // Update the key only if graph[u][v] is smaller than key[v]
-            if (graph[u][v] && mstSet[v] === false && graph[u][v] < key[v]){
-                parent[v] = u;
-                key[v] = graph[u][v];
-            }
-        }
-    }
-    const k = makeHL(parent,orderHL,V,cyRef,idChart);
-    return k;
-}
-
 const handlePrim = async(cyRef,setHL,order,setOrder) => {
     //construct the graph as param for prim func above. Follow: https://www.geeksforgeeks.org/prims-minimum-spanning-tree-mst-greedy-algo-5/#
     const V = cyRef.nodes();
@@ -178,7 +98,7 @@ const handlePrim = async(cyRef,setHL,order,setOrder) => {
             sTot?graph[idChart[s]][idChart[t]] = parseInt(sTot) : graph[idChart[s]][idChart[t]] = parseInt(cyRef.edges(`edge[source="${t}"][target="${s}"]`).data('weight'));
         })
     });
-    const k = primMST(graph,V.length,cyRef,idChart,order,setOrder);
+    const k = primMST(graph,V.length,cyRef,idChart);
     setHL(k);
     let i = 0;
     const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -216,22 +136,24 @@ const handleRemoveAnimation = (cyRef,setHL,hl,setRenderEdges,setOrder) => {
 }
 
 // get node k and all edges coming out from it
-const handleRemoveNode = (cyRef,inputNode,node,setRemoveNode)=>{
+const handleRemoveNode = (cyRef,inputNode,node,setRemoveNode,setSbs)=>{
   //cy selector 
   const removeElements = cyRef.elements(`node#${node}, edge[source = "${node}"]`);
   cyRef.remove(removeElements);
   setRemoveNode("");
+  setSbs(false);
   if (inputNode.current[1]){
     inputNode.current[1].children[1].children[0].value = null;
   }
 }
-const handleRemoveEdge = (cyRef,inputEdge,edge,setRemoveEdge) => {
+const handleRemoveEdge = (cyRef,inputEdge,edge,setRemoveEdge,setSbs) => {
   edge = edge.split(',');
   //cy selector
   const a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`);
   const b = cyRef.edges(`edge[source="${edge[1]}"][target="${edge[0]}"]`);
   const removeEdge = a.length>0?a:b;
   cyRef.remove(removeEdge);
+  setSbs(false);
   setRemoveEdge("");
   if (inputEdge.current[1]){
     inputEdge.current[1].children[1].children[0].value = null;
@@ -256,6 +178,10 @@ const Prim = (props) =>{
   const [renderEdges,setRenderEdges] = React.useState([]);
   //Force edge to have weight
   const [forceW, setForceW] = React.useState(false);
+
+  //SBS
+  const [sbs, setSbs] = React.useState(false);
+
   //keep track of all considering edges 
   let ARR = [];
   //visited edges.
@@ -273,21 +199,21 @@ const Prim = (props) =>{
         variant="outlined" 
         ref={el=>inputNode.current[0]=el} 
         onChange={(e) => setNewNode(e.target.value)} 
-        onKeyDown={(e)=>handleAddNode(e,newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}
+        onKeyDown={(e)=>handleAddNode(e,newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN,setSbs)}
         />
         <TextField id="outlined-basic" label="Edge" 
         variant="outlined" 
         ref={el=>inputEdge.current[0]=el} 
         onChange={(e) => {setNewEdge(e.target.value)}} 
-        onKeyDown={(e)=>handleAddEdge(e,newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setForceW)}
+        onKeyDown={(e)=>handleAddEdge(e,newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setForceW,setSbs)}
         />
       </div>
       <Button variant='contained' onClick={()=>{handlePrim(props.cyRef,setHL,order,setOrder)}}>Run Prim</Button>
       <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef,setHL,hl,setRenderEdges,setOrder)}}>Clear Animation</Button>
       <TextField id="outlined-basic" label="Remove Edge" variant="outlined" ref={el => inputEdge.current[1] = el} onChange={(e) => setRemoveEdge(e.target.value)}/>
-      <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge)}}>Remove edge</Button>
+      <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge,setSbs)}}>Remove edge</Button>
       <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
-      <Button variant="contained" onClick={()=>{handleRemoveNode(props.cyRef,inputNode,removeNode,setRemoveNode)}}>Remove node</Button>
+      <Button variant="contained" onClick={()=>{handleRemoveNode(props.cyRef,inputNode,removeNode,setRemoveNode,setSbs)}}>Remove node</Button>
       {renderEdges && <div style={{marginBottom:"16px", fontWeight: 'bold'}}>Edges to choose are all the edges that are connected to already visited nodes</div>}
       {forceW&&<div style={{color:"red"}}>Please include weight when adding edges</div>}
       <div>
@@ -330,6 +256,7 @@ const Prim = (props) =>{
       </div>
       {duplicateN && <div>Node is already exist</div>}
       {duplicateE && <div>Edge with the same weight is already exist</div>}
+      <PrimDetail cyRef={props.cyRef} sbs={sbs} setSbs={setSbs}/>
     </>
   );
 }

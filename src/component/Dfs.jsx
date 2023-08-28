@@ -4,9 +4,10 @@ import tippy from 'tippy.js';
 import {dObj} from '../static.js';
 import DfsDetail from "./sbs/DfsDetail.jsx";
 
-const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN) => {
+const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN,setSbs) => {
   if (e.key==='Enter'){
     setDuplicateN(false);
+    setSbs(false);
     const random_x = Math.floor(Math.random() * 100) + 1;
     const add_x = random_x > 50 ? random_x:random_x-100;
     const add_y = Math.floor(Math.random() * 100) + 50;
@@ -29,9 +30,10 @@ const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,input
   }
 }
 
-const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE) => {
+const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE,setSbs) => {
   if (e.key==='Enter'){
     setDuplicateE(false);
+    setSbs(false);
     let edge = addEdge.split(',');
     if (cyRef){
       let a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`).size();
@@ -120,22 +122,24 @@ const handleDfs = async(cyRef,begin,order,setOrder,setOrderRender) => {
 }
 
 // get node k and all edges coming out from it
-const handleRemoveNode = (cyRef,inputNode,node,setRemoveNode)=>{
+const handleRemoveNode = (cyRef,inputNode,node,setRemoveNode,setSbs)=>{
   //cy selector 
   const removeElements = cyRef.elements(`node#${node}, edge[source = "${node}"]`);
   cyRef.remove(removeElements);
   setRemoveNode("");
+  setSbs(false);
   if (inputNode.current[1]){
     inputNode.current[1].children[1].children[0].value = null;
   }
 }
-const handleRemoveEdge = (cyRef,inputEdge,edge,setRemoveEdge) => {
+const handleRemoveEdge = (cyRef,inputEdge,edge,setRemoveEdge,setSbs) => {
   edge = edge.split(',');
   const a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`);
   const b = cyRef.edges(`edge[source="${edge[1]}"][target="${edge[0]}"]`);
   const removeEdge = a.length>0?a:b;
   cyRef.remove(removeEdge);
   setRemoveEdge("");
+  setSbs(false);
   if (inputEdge.current[1]){
     inputEdge.current[1].children[1].children[0].value = null;
   }
@@ -153,7 +157,9 @@ const Dfs = (props) =>{
   const [removeNode, setRemoveNode] = React.useState();
   const [duplicateN, setDuplicateN] = React.useState(false);
   const [duplicateE, setDuplicateE] = React.useState(false);
-  const [reset,setReset] = React.useState(false);
+  
+  //SBS
+  const [sbs,setSbs] = React.useState(false);
   //this 2 ref are used for multiple components
   const inputNode = React.useRef([]);
   const inputEdge = React.useRef([]);
@@ -164,17 +170,15 @@ const Dfs = (props) =>{
   return (
     <>
       <div>
-        <TextField id="outlined-basic" label="Node" variant="outlined" ref={el=>inputNode.current[0]=el} onChange={(e) => setNewNode(e.target.value)} onKeyDown={(e)=>handleAddNode(e,newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}/>
-        {/* <Button variant='contained' onClick={()=>handleAddNode(newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}>Add node</Button> */}
-        <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}} onKeyDown={(e)=>handleAddEdge(e,newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE)}/>
-        {/* <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE)}>Add edge</Button> */}
+        <TextField id="outlined-basic" label="Node" variant="outlined" ref={el=>inputNode.current[0]=el} onChange={(e) => setNewNode(e.target.value)} onKeyDown={(e)=>handleAddNode(e,newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN,setSbs)}/>
+        <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}} onKeyDown={(e)=>handleAddEdge(e,newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setSbs)}/>
       </div>
       <TextField id="outlined-basic" label="Node" variant="outlined" onChange={(e) => setRootNode(e.target.value)}/>
       <Button variant='contained' onClick={()=>{handleDfs(props.cyRef,rootNode,order,setOrder,setOrderRender)}}>Run DFS</Button>
       <TextField id="outlined-basic" label="Remove Edge" variant="outlined" ref={el => inputEdge.current[1] = el} onChange={(e) => setRemoveEdge(e.target.value)}/>
-      <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge)}}>Remove edge</Button>
+      <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge,setSbs)}}>Remove edge</Button>
       <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
-      <Button variant="contained" onClick={()=>{handleRemoveNode(props.cyRef,inputNode,removeNode,setRemoveNode)}}>Remove node</Button>
+      <Button variant="contained" onClick={()=>{handleRemoveNode(props.cyRef,inputNode,removeNode,setRemoveNode,setSbs)}}>Remove node</Button>
       <div>
         {orderRender.map((node)=>{
           return(<span>{node}</span>);
@@ -183,7 +187,7 @@ const Dfs = (props) =>{
       {duplicateN && <div>Node is already exist</div>}
       {duplicateE && <div>Edge is already exist</div>}
       {/* Add new route */}
-      <DfsDetail cyRef={props.cyRef}/>
+      <DfsDetail cyRef={props.cyRef} sbs={sbs} setSbs={setSbs}/>
     </>
   );
 }

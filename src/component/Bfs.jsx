@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button, TextField } from '@mui/material';
+import BfsDetail from './sbs/BfsDetail';
 
 const POSITION_X = 400;
 const POSITION_Y = 250;
@@ -166,6 +167,8 @@ const Bfs = (props) =>{
       </div>
       {duplicateN && <div>Node is already exist</div>}
       {duplicateE && <div>Edge is already exist</div>}
+
+      <BfsDetail cyRef={props.cyRef}/>
     </>
   );
   }
