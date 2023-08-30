@@ -1,15 +1,14 @@
 import React from 'react';
 import { Button, TextField } from '@mui/material';
 
-const handleRunAlgo = (e,cyRef,begin,setStackNext,stackBack,setStackBack,setCurrentNode) => {
+const handleRunAlgo = (e,cyRef,begin,setStackNext,stackBack,setStackBack,setCurrentNode,setSbs) => {
   if (e.key === 'Enter'){
-    console.log("Running handleRunAlgo:", begin);
-    var bfs = cyRef.elements().bfs(`#${begin}`,function(){});
-    console.log("BFS detail: ",bfs);
     //remove css from all highlighted nodes (back stack)
+    setSbs(true);
     stackBack.map((node) => {
       return node.removeClass('highlighted');
     })
+    var bfs = cyRef.elements().bfs(`#${begin}`,function(){});
     //reset back stack
     setStackBack([]);
     let stack = [];
@@ -29,7 +28,7 @@ const handleRunAlgo = (e,cyRef,begin,setStackNext,stackBack,setStackBack,setCurr
   }
 }
 
-const handleNextStep = (setCurrentNode,stackNext,setStackBack) => {
+const handleNextStep = (stackNext,setStackBack) => {
   const top = stackNext.shift();
   if (!top){return -1;}
   top.addClass('highlighted');
@@ -37,8 +36,7 @@ const handleNextStep = (setCurrentNode,stackNext,setStackBack) => {
   return top;
 }
 
-const handleBackStep = (setCurrentNode,setStackNext,stackBack) => {
-console.log(stackBack);
+const handleBackStep = (setStackNext,stackBack) => {
 const top = stackBack.shift();
 if (!top){return -1;}
 top.removeClass('highlighted');
@@ -52,17 +50,15 @@ const BfsDetail = (props) =>{
   const [stackNext, setStackNext] = React.useState([]);
   const [stackBack, setStackBack] = React.useState([]);
 
-  console.log('curr',stackNext,stackBack);
   return (
     <>
       <div style={{"marginTop":"32px"}}>
       <div>Need to slow down? Here is a step by step animation.</div>
       <div>You can change the start node and hit ENTER to commit the change before click NEXT/BACK. Notice once hit ENTER all animation disappear</div>
-      {/* Add new route ?*/}
-      <TextField id="outlined-basic" label="Node" variant="outlined" onChange={(e) => setRootNode(e.target.value)} onKeyDown={(e)=>handleRunAlgo(e,props.cyRef,rootNode,setStackNext,stackBack,setStackBack,setCurrentNode)}/>
-      { rootNode&&<>
-        <Button onClick={()=>{handleNextStep(setCurrentNode,stackNext,setStackBack)}}>Next</Button>
-        <Button onClick={()=>{handleBackStep(setCurrentNode,setStackNext,stackBack)}}>Back</Button>
+      <TextField id="outlined-basic" label="Node" variant="outlined" onChange={(e) => {setRootNode(e.target.value); props.setSbs(false)}} onKeyDown={(e)=>handleRunAlgo(e,props.cyRef,rootNode,setStackNext,stackBack,setStackBack,setCurrentNode,props.setSbs)}/>
+      { rootNode&&props.sbs&&<>
+        <Button onClick={()=>{handleNextStep(stackNext,setStackBack)}}>Next</Button>
+        <Button onClick={()=>{handleBackStep(setStackNext,stackBack)}}>Back</Button>
         </>
       }
       </div>
