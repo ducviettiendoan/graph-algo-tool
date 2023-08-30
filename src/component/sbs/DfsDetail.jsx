@@ -6,8 +6,8 @@ import {dObj} from '../../static.js';
 // The feature mainly use 2 stacks for ordering the next node to highlight a node or unhighlight a 
 // current node and go back to the previous node.
 
-const handleRunAlgo = (e,cyRef,begin,stackNext,setStackNext,stackBack,setStackBack,setCurrentNode,setSbs) => {
-    if (e.key === 'Enter'){
+const handleRunAlgo = (e,cyRef,begin,stackNext,setStackNext,stackBack,setStackBack,setCurrentNode,setSbs,visualization) => {
+    if (e.key === 'Enter' && !visualization){
       setSbs(true);
       //remove css from all highlighted nodes (back stack & next stack since dfs has 2-way animation) to reset previous handleRunAlgo
       stackBack.map((node) => {
@@ -112,8 +112,8 @@ const DfsDetail = (props) =>{
     <div style={{"marginTop":"32px"}}>
       <div>Need to slow down? Here is a step by step animation.</div>
       <div>You can change the start node and hit ENTER to commit the change before click NEXT/BACK. Notice once hit ENTER all animation disappear</div>
-      <TextField id="outlined-basic" label="Node" variant="outlined" onChange={(e) => {setRootNode(e.target.value); props.setSbs(false)}} onKeyDown={(e)=>handleRunAlgo(e,props.cyRef,rootNode,stackNext,setStackNext,stackBack,setStackBack,setCurrentNode,props.setSbs)}/>
-      {rootNode&&props.sbs&&<>
+      <TextField id="outlined-basic" label="Node" variant="outlined" onChange={(e) => {setRootNode(e.target.value); props.setSbs(false)}} onKeyDown={(e)=>handleRunAlgo(e,props.cyRef,rootNode,stackNext,setStackNext,stackBack,setStackBack,setCurrentNode,props.setSbs,props.visualization)}/>
+      {rootNode&&props.sbs&&!props.visualization&&<>
         <Button onClick={()=>{handleNextStep(stackNext,setStackBack,setStackNext)}}>Next</Button>
         <Button onClick={()=>{handleBackStep(setStackNext,stackBack)}}>Back</Button>
         </>

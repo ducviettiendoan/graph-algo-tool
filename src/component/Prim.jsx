@@ -78,7 +78,13 @@ const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setD
   }
 }
 
-const handlePrim = async(cyRef,setHL,order,setOrder) => {
+const handlePrim = async(cyRef,setHL,order,setOrder,setSbs,setVisualization,hl,setRenderEdges) => {
+    setSbs(false);
+    setVisualization(true);
+    //always remove all animations before run new visualization (reset all sbs animations)
+    await cyRef.elements().map(ele=>{
+      ele.removeClass('highlighted');
+    })
     //construct the graph as param for prim func above. Follow: https://www.geeksforgeeks.org/prims-minimum-spanning-tree-mst-greedy-algo-5/#
     const V = cyRef.nodes();
     const idChart = {};
@@ -112,27 +118,13 @@ const handlePrim = async(cyRef,setHL,order,setOrder) => {
         }
     };
     await highlightNextEle();
-}
-
-//to do (hl stored in a state could cause crash)
-const handleRemoveAnimation = (cyRef,setHL,hl,setRenderEdges,setOrder) => {
-    if (!hl){
-        console.log("No highlighted element");
-        return;
-    }
-    var i = 0;
-    var removeStyleNextEle = function(){
-        if( i < hl.length ){
-            hl[i].removeClass('highlighted');
-            i++;
-            removeStyleNextEle();
-        }
-    }
-    removeStyleNextEle();
-    //reset hl state for next time run Prim 
+    await cyRef.elements().map(ele=>{
+      ele.removeClass('highlighted');
+    })
     setHL(null);
     setRenderEdges([]);
     setOrder(null);
+    setVisualization(false);
 }
 
 // get node k and all edges coming out from it
@@ -182,6 +174,9 @@ const Prim = (props) =>{
   //SBS
   const [sbs, setSbs] = React.useState(false);
 
+  //visualization true = algo animation is running do not interrupt
+  const [visualization, setVisualization] = React.useState(false);
+
   //keep track of all considering edges 
   let ARR = [];
   //visited edges.
@@ -208,8 +203,7 @@ const Prim = (props) =>{
         onKeyDown={(e)=>handleAddEdge(e,newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setForceW,setSbs)}
         />
       </div>
-      <Button variant='contained' onClick={()=>{handlePrim(props.cyRef,setHL,order,setOrder)}}>Run Prim</Button>
-      <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef,setHL,hl,setRenderEdges,setOrder)}}>Clear Animation</Button>
+      <Button variant='contained' onClick={()=>{handlePrim(props.cyRef,setHL,order,setOrder,setSbs,setVisualization,hl,setRenderEdges)}}>Run Prim</Button>
       <TextField id="outlined-basic" label="Remove Edge" variant="outlined" ref={el => inputEdge.current[1] = el} onChange={(e) => setRemoveEdge(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge,setSbs)}}>Remove edge</Button>
       <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
@@ -256,7 +250,7 @@ const Prim = (props) =>{
       </div>
       {duplicateN && <div>Node is already exist</div>}
       {duplicateE && <div>Edge with the same weight is already exist</div>}
-      <PrimDetail cyRef={props.cyRef} sbs={sbs} setSbs={setSbs}/>
+      <PrimDetail cyRef={props.cyRef} sbs={sbs} setSbs={setSbs} visualization={visualization}/>
     </>
   );
 }

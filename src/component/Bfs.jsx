@@ -88,8 +88,12 @@ const handleRemoveAnimation = (cyRef,begin,setOrderRender) => {
   setOrderRender([]);
 }
 
-const handleBfs = async(cyRef,begin,order,setOrder,setOrderRender) => {
+const handleBfs = async(cyRef,begin,order,setOrder,setOrderRender,setSbs,setVisualization) => {
   let visit = new Set();
+  setSbs(false);
+  setVisualization(true);
+  //always remove before run in case for sbs is running and interrupt.
+  await handleRemoveAnimation(cyRef,begin,setOrderRender);
   await handleAnimationBfs(cyRef,begin,order,setOrder,visit);
   const nodes = cyRef.nodes().map((node)=>{return node.data('id')})
   for (let i=0; i<nodes.length; i++){
@@ -98,6 +102,7 @@ const handleBfs = async(cyRef,begin,order,setOrder,setOrderRender) => {
     }
   }
   await handleRemoveAnimation(cyRef,begin,setOrderRender);
+  setVisualization(false);
 }
 
 // get node k and all edges coming out from it
@@ -136,6 +141,8 @@ const Bfs = (props) =>{
   const [duplicateN, setDuplicateN] = React.useState(false);
   const [duplicateE, setDuplicateE] = React.useState(false);
   const [sbs, setSbs] = React.useState(false);
+  //visualization true = algo animation is running do not interrupt
+  const [visualization, setVisualization] = React.useState(false);
   //this 2 ref are used for multiple components
   const inputNode = React.useRef([]); 
   const inputEdge = React.useRef([]);
@@ -160,7 +167,7 @@ const Bfs = (props) =>{
         {/* <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE)}>Add edge</Button> */}
       </div>
       <TextField id="outlined-basic" label="Execute" variant="outlined" onChange={(e) => setRootNode(e.target.value)}/>
-      <Button variant='contained' onClick={()=>{handleBfs(props.cyRef,rootNode,order,setOrder,setOrderRender)}}>Run BFS</Button>
+      <Button variant='contained' onClick={()=>{handleBfs(props.cyRef,rootNode,order,setOrder,setOrderRender,setSbs,setVisualization)}}>Run BFS</Button>
       <TextField id="outlined-basic" label="Remove Edge" variant="outlined" ref={el => inputEdge.current[1] = el} onChange={(e) => setRemoveEdge(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge,setSbs)}}>Remove edge</Button>
       <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
@@ -173,7 +180,7 @@ const Bfs = (props) =>{
       {duplicateN && <div>Node is already exist</div>}
       {duplicateE && <div>Edge is already exist</div>}
 
-      <BfsDetail cyRef={props.cyRef} sbs={sbs} setSbs={setSbs}/>
+      <BfsDetail cyRef={props.cyRef} sbs={sbs} setSbs={setSbs} visualization={visualization}/>
     </>
   );
   }

@@ -2,7 +2,8 @@ import React from 'react';
 import { Button, TextField } from '@mui/material';
 import { primMST } from '../../util/util';
 
-const handleRunAlgo = (cyRef,setStackNext,stackBack,setStackBack,setCurrentNode,setSbs) => {
+const handleRunAlgo = (cyRef,setStackNext,stackBack,setStackBack,setCurrentNode,setSbs,visualization) => {
+    if (!visualization){
         //remove css from all highlighted nodes (back stack)
         stackBack.map((node) => {
             return node.removeClass('highlighted');
@@ -44,23 +45,24 @@ const handleRunAlgo = (cyRef,setStackNext,stackBack,setStackBack,setCurrentNode,
         console.log(err);
         }
     }
+}
   
-  const handleNextStep = (setCurrentNode,stackNext,setStackBack) => {
+const handleNextStep = (setCurrentNode,stackNext,setStackBack) => {
     const top = stackNext.shift();
     if (!top){return -1;}
     top.addClass('highlighted');
     setStackBack(current=>[top,...current]);
     return top;
-  }
-  
-  const handleBackStep = (setCurrentNode,setStackNext,stackBack) => {
-  console.log(stackBack);
-  const top = stackBack.shift();
-  if (!top){return -1;}
-  top.removeClass('highlighted');
-  setStackNext(current=>[top,...current]);
-  return top;
-  }
+}
+
+const handleBackStep = (setCurrentNode,setStackNext,stackBack) => {
+    console.log(stackBack);
+    const top = stackBack.shift();
+    if (!top){return -1;}
+    top.removeClass('highlighted');
+    setStackNext(current=>[top,...current]);
+    return top;
+}
 
 const PrimDetail = (props) =>{
   const [currentNode, setCurrentNode] = React.useState();
@@ -73,9 +75,10 @@ const PrimDetail = (props) =>{
       <div>You can change the start node and hit ENTER to commit the change before click NEXT/BACK. Notice once hit ENTER all animation disappear</div>
       {/* Add new route ?*/}
       {/* <TextField id="outlined-basic" label="Node" variant="outlined" onChange={(e) => setRootNode(e.target.value)} onKeyDown={(e)=>handleRunAlgo(e,props.cyRef,rootNode,setStackNext,stackBack,setStackBack,setCurrentNode)}/> */}
-      {!props.sbs && <Button onClick={()=>{handleRunAlgo(props.cyRef,setStackNext,stackBack,setStackBack,setCurrentNode,props.setSbs)}}>SBS</Button>}
-      {props.sbs&&
-      <>
+      {!props.sbs ? 
+      <Button onClick={()=>{handleRunAlgo(props.cyRef,setStackNext,stackBack,setStackBack,setCurrentNode,props.setSbs,props.visualization)}}>SBS</Button>
+      :
+        <>
         <Button onClick={()=>{handleNextStep(setCurrentNode,stackNext,setStackBack)}}>Next</Button>
         <Button onClick={()=>{handleBackStep(setCurrentNode,setStackNext,stackBack)}}>Back</Button>
         </>

@@ -100,8 +100,19 @@ const handleAnimationDfs = async (cyRef,begin,order,setOrder,setOrderRender,visi
   setOrderRender([]);
   return finishTime;
 }
-const handleDfs = async(cyRef,begin,order,setOrder,setOrderRender) => {
+const handleDfs = async(cyRef,begin,order,setOrder,setOrderRender,setSbs,setVisualization) => {
   let visit = new Set();
+  setSbs(false);
+  setVisualization(true);
+  //reset the graph
+  await cyRef.elements().map((ele)=>{
+    const extract = ele.data('label').split(',')
+    //reset start, end
+    extract[1] = -1;
+    extract[2] = -1;
+    ele.data().label = extract.join(',');
+    ele.removeClass('highlighted');
+  })
   let time = await handleAnimationDfs(cyRef,begin,order,setOrder,setOrderRender,visit,0);
   // console.log(time);
   const nodes = cyRef.nodes().map((node)=>{return node.data('id')})
@@ -110,15 +121,17 @@ const handleDfs = async(cyRef,begin,order,setOrder,setOrderRender) => {
       time = await handleAnimationDfs(cyRef,nodes[i],order,setOrder,setOrderRender,visit,time);
     }
   }
-  cyRef.nodes().map((ele)=>{
+  //restart start-end of all nodes.
+  await cyRef.nodes().map((ele)=>{
       const extract = ele.data('label').split(',')
       //reset start, end
       extract[1] = -1;
       extract[2] = -1;
       ele.data().label = extract.join(',');
-      //This line for rerendering all node with resert start,end only.
-      ele.removeClass('resetDfs');
+      //removeClass forces re-render
+      ele.removeClass('highlighted');
   })
+  setVisualization(false);
 }
 
 // get node k and all edges coming out from it
@@ -157,6 +170,8 @@ const Dfs = (props) =>{
   const [removeNode, setRemoveNode] = React.useState();
   const [duplicateN, setDuplicateN] = React.useState(false);
   const [duplicateE, setDuplicateE] = React.useState(false);
+  //visualization true = algo animation is running do not interrupt
+  const [visualization, setVisualization] = React.useState(false);
   
   //SBS
   const [sbs,setSbs] = React.useState(false);
@@ -174,7 +189,7 @@ const Dfs = (props) =>{
         <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}} onKeyDown={(e)=>handleAddEdge(e,newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setSbs)}/>
       </div>
       <TextField id="outlined-basic" label="Node" variant="outlined" onChange={(e) => setRootNode(e.target.value)}/>
-      <Button variant='contained' onClick={()=>{handleDfs(props.cyRef,rootNode,order,setOrder,setOrderRender)}}>Run DFS</Button>
+      <Button variant='contained' onClick={()=>{handleDfs(props.cyRef,rootNode,order,setOrder,setOrderRender,setSbs,setVisualization)}}>Run DFS</Button>
       <TextField id="outlined-basic" label="Remove Edge" variant="outlined" ref={el => inputEdge.current[1] = el} onChange={(e) => setRemoveEdge(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge,setSbs)}}>Remove edge</Button>
       <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
@@ -187,7 +202,7 @@ const Dfs = (props) =>{
       {duplicateN && <div>Node is already exist</div>}
       {duplicateE && <div>Edge is already exist</div>}
       {/* Add new route */}
-      <DfsDetail cyRef={props.cyRef} sbs={sbs} setSbs={setSbs}/>
+      <DfsDetail cyRef={props.cyRef} sbs={sbs} setSbs={setSbs} visualization={visualization}/>
     </>
   );
 }
