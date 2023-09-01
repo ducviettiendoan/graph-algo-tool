@@ -17,12 +17,13 @@ import Prim from './component/Prim';
 // ];
 
 function App() {
-  const cyRef = React.useRef();
+  // const cyRef = React.useRef();
+  const [cyRef,setCyRef] = React.useState();
   const [elements, setElements] = React.useState([]);
   //test animation
   // cyRef.current ? console.log(cyRef.current.elements()):console.log('@@');
-  if (cyRef.current){
-    cyRef.current.style()
+  if (cyRef){
+    cyRef.style()
       .selector('node')
         .style({'label':'data(id)'})
         .css({
@@ -51,23 +52,24 @@ function App() {
       //dupmy css to make rerender on finish DFS
       .selector('.resetDfs')
         .css({})
-    cyRef.current.zoomingEnabled(false);
+    cyRef.zoomingEnabled(false);
   }
+  console.log(cyRef);
   return (
     <>
       <BrowserRouter>
         <Nav/>
-        <Routes>
+        {cyRef&&<Routes>
           <Route path="/" element={<Home/>} />
-          <Route path="/bfs" element={<Bfs cyRef = {cyRef.current} elements = {elements} setElements = {setElements}/>} />
-          <Route path="/dfs" element={<Dfs cyRef = {cyRef.current} elements = {elements} setElements = {setElements}/>} />
-          <Route path="/kruskal" element={<Kruscal cyRef = {cyRef.current} elements = {elements} setElements = {setElements}/>} />
-          <Route path="/prim" element={<Prim cyRef = {cyRef.current} elements = {elements} setElements = {setElements}/>} />
-        </Routes>
+          <Route path="/bfs" element={<Bfs cyRef = {cyRef} elements = {elements} setElements = {setElements}/>} />
+          <Route path="/dfs" element={<Dfs cyRef = {cyRef} elements = {elements} setElements = {setElements}/>} />
+          <Route path="/kruskal" element={<Kruscal cyRef = {cyRef} elements = {elements} setElements = {setElements}/>} />
+          <Route path="/prim" element={<Prim cyRef = {cyRef} elements = {elements} setElements = {setElements}/>} />
+        </Routes>}
       </BrowserRouter>
       <div style={{display:"flex", justifyContent:"center"}}>
         <CytoscapeComponent 
-          cy={(cy)=>{cyRef.current = cy}}
+          cy={(cy)=>{setCyRef(cy)}}
           style={{width:'900px', height:'900px'}}
           elements={elements}   
         />

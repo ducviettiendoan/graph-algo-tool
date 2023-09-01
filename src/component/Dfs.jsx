@@ -21,7 +21,9 @@ const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,input
     new_node = { data: { id: `${addNode}`, label: `${addNode},${dObj.START},${dObj.END}` }, position: { x: elements[0].position.x+add_x, y: elements[0].position.y+add_y} } //position based on 1st node
     setElements([...elements, new_node]);
     setNodes([...nodes,new_node.data.id]);
+    console.log(cyRef);
     if (cyRef){
+      console.log("AAAAAADD");
       cyRef.add(new_node);
     }
     if (inputNode.current[0]){
@@ -182,6 +184,8 @@ const Dfs = (props) =>{
   React.useEffect(()=>{
     setOrderRender([...orderRender,order]);
   },[order]);
+  
+  console.log(props.cyRef);
   return (
     <>
       <div>

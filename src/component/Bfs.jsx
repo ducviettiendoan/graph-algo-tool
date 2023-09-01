@@ -1,61 +1,71 @@
 import React from 'react';
 import { Button, TextField } from '@mui/material';
+import { JsonInput } from '@mantine/core';
 import BfsDetail from './sbs/BfsDetail';
 
 const POSITION_X = 400;
 const POSITION_Y = 250;
 
-const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN,setSbs) => {
+const addNode = (cyRef,node,setDuplicateN,elements,setElements,nodes,setNodes) => {
+  const random_x = Math.floor(Math.random() * 100) + 1;
+  const add_x = random_x > 50 ? random_x:random_x-100;
+  const add_y = Math.floor(Math.random() * 100) + 50;
+  //find whether the node exists in cyRef
+  if (cyRef && cyRef.elements(`node#${node}`).size()>0){
+    setDuplicateN(true);
+    return;
+  }
+  let new_node = {};
+  // elements.length === 0 ? new_node = { data: { id: `${node}`, label: `Node ${node}` }, position: { x: POSITION_X, y: POSITION_Y} } : 
+  new_node = { data: { id: `${node}`, label: `Node ${node}` }, position: { x: POSITION_X+add_x, y: POSITION_Y+add_y} } //position based on 1st node
+  console.log(new_node);
+  setElements([...elements, new_node]);
+  setNodes([...nodes,new_node.data.id]);
+  console.log("add node");
+  if (cyRef){
+    cyRef.add(new_node);
+  }
+}
+
+const handleAddNode = (e,node,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN,setSbs) => {
   if (e.key==='Enter'){
     setDuplicateN(false);
     setSbs(false);
-    const random_x = Math.floor(Math.random() * 100) + 1;
-    const add_x = random_x > 50 ? random_x:random_x-100;
-    const add_y = Math.floor(Math.random() * 100) + 50;
-    //find whether the node exists in cyRef
-    if (cyRef && cyRef.elements(`node#${addNode}`).size()>0){
-      setDuplicateN(true);
-      return;
-    }
-    let new_node = {};
-    elements.length === 0 ? new_node = { data: { id: `${addNode}`, label: `Node ${addNode}` }, position: { x: POSITION_X, y: POSITION_Y} } : 
-    new_node = { data: { id: `${addNode}`, label: `Node ${addNode}` }, position: { x: elements[0].position.x+add_x, y: elements[0].position.y+add_y} } //position based on 1st node
-    setElements([...elements, new_node]);
-    setNodes([...nodes,new_node.data.id]);
-    if (cyRef){
-      cyRef.add(new_node);
-    }
+    addNode(cyRef,node,setDuplicateN,elements,setElements,nodes,setNodes);
     //handle clear TextField value
     if (inputNode.current[0]){
       inputNode.current[0].children[1].children[0].value = null;
     }
   }
 }
-
-const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE,setSbs) => {
+ 
+const addEdge = (cyRef,a_edge,nodes,elements,setElements,setDuplicateE) => {
+  let edge = a_edge.split(',');
+  if (cyRef){
+    //find edge exist in cyRef in both way a->b and b->a.
+    let a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`).size();
+    let b = cyRef.edges(`edge[source="${edge[1]}"][target="${edge[0]}"]`).size();
+    if (a || b){
+      setDuplicateE(true);
+      return;
+    }
+  }
+  //handle edge does not exist (2 nodes does not exist)
+  if (cyRef.elements(`node#${edge[0]}`) && cyRef.elements(`node#${edge[1]}`)){
+      let new_edge = { data: { source: `${edge[0]}`, target: `${edge[1]}`, label: `Edge from Node${edge[0]} to Node${edge[1]}`}};
+      setElements([...elements, new_edge]);
+      if (cyRef){
+        cyRef.add(new_edge);
+      }
+  }else{
+      console.error("Cannot add edge!");
+  }
+}
+const handleAddEdge = (e,a_edge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE,setSbs) => {
   if (e.key==='Enter'){
     setDuplicateE(false);
     setSbs(false);
-    let edge = addEdge.split(',');
-    if (cyRef){
-      //find edge exist in cyRef in both way a->b and b->a.
-      let a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`).size();
-      let b = cyRef.edges(`edge[source="${edge[1]}"][target="${edge[0]}"]`).size();
-      if (a || b){
-        setDuplicateE(true);
-        return;
-      }
-    }
-    //handle edge does not exist (2 nodes does not exist)
-    if (nodes.includes(edge[0]) && nodes.includes(edge[1])){
-        let new_edge = { data: { source: `${edge[0]}`, target: `${edge[1]}`, label: `Edge from Node${edge[0]} to Node${edge[1]}`}};
-        setElements([...elements, new_edge]);
-        if (cyRef){
-          cyRef.add(new_edge);
-        }
-    }else{
-        console.error("Cannot add edge!");
-    }
+    addEdge(cyRef,a_edge,nodes,elements,setElements,setDuplicateE);
     //handle clear TextField value
     if (inputEdge.current[0]){
       inputEdge.current[0].children[1].children[0].value = null;
@@ -129,6 +139,38 @@ const handleRemoveEdge = (cyRef,inputEdge,edge,setRemoveEdge,setSbs) => {
     inputEdge.current[1].children[1].children[0].value = null;
   }
 }
+
+const handleAdjMatrixInput = (cyRef,adjMatrix,setDuplicateN,setDuplicateE,elements,setElements,nodes,setNodes) => {
+  console.log(adjMatrix);
+  if (adjMatrix.length === 0){return null;}
+  if (adjMatrix[0].length !== adjMatrix.length){
+    return null;
+  }
+  //add Node
+  for (let i=1;i<=adjMatrix.length;i++){
+    console.log("add");
+    addNode(cyRef,i,setDuplicateN,elements,setElements,nodes,setNodes);
+  }
+  console.log("After add nodes",nodes,cyRef.nodes());
+  //add Edge
+  let row = adjMatrix.length;
+  let col = adjMatrix[0].length;
+  for (let i=0;i<row;i++){
+    for (let j=0;j<col;j++){
+      if (adjMatrix[i][j] === 1){
+        let edge = `${i+1},${j+1}`;
+        console.log("@@",edge);
+        addEdge(cyRef,edge,nodes,elements,setElements,setDuplicateE);
+      }
+    }
+    
+  }
+}
+
+const handleCreateGraphAdjMatrix = (cyRef,setDuplicateN,setDuplicateE,elements,setElements,nodes,setNodes,value,adjMatrix,setAdjMatrix) => {
+  console.log(value);
+  handleAdjMatrixInput(cyRef,value,setDuplicateN,setDuplicateE,elements,setElements,nodes,setNodes);
+}
 const Bfs = (props) =>{
   const [newNode, setNewNode] = React.useState(null);
   const [newEdge, setNewEdge] = React.useState(null);
@@ -143,6 +185,10 @@ const Bfs = (props) =>{
   const [sbs, setSbs] = React.useState(false);
   //visualization true = algo animation is running do not interrupt
   const [visualization, setVisualization] = React.useState(false);
+
+  const [value, setValue] = React.useState('');
+  const [adjList, setAdjList] = React.useState();
+  const [adjMatrix, setAdjMatrix] = React.useState([]);
   //this 2 ref are used for multiple components
   const inputNode = React.useRef([]); 
   const inputEdge = React.useRef([]);
@@ -158,6 +204,9 @@ const Bfs = (props) =>{
     }
     order && setOrderRender([...orderRender,order._private.data.id]);
   },[order]);
+
+  console.log(nodes);
+  console.log(props.cyRef);
   return (
     <>
       <div>
@@ -181,6 +230,8 @@ const Bfs = (props) =>{
       {duplicateE && <div>Edge is already exist</div>}
 
       <BfsDetail cyRef={props.cyRef} sbs={sbs} setSbs={setSbs} visualization={visualization}/>
+      <JsonInput value={value} onChange={setValue} autosize style={{"width":"20%"}}/>
+      <Button onClick={()=>handleCreateGraphAdjMatrix(props.cyRef,setDuplicateN,setDuplicateE,props.elements,props.setElements,nodes,setNodes,JSON.parse(value),adjMatrix,setAdjMatrix)}>Generate Graph</Button>
     </>
   );
   }
