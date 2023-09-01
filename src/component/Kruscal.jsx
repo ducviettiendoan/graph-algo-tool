@@ -4,7 +4,8 @@ import { Button, TextField } from '@mui/material';
 const POSITION_X = 400;
 const POSITION_Y = 250;
 
-const handleAddNode = (addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN) => {
+const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN) => {
+  if (e.key==='Enter'){
     const random_x = Math.floor(Math.random() * 100) + 1;
     const add_x = random_x > 50 ? random_x:random_x-100;
     const add_y = Math.floor(Math.random() * 100) + 50;    
@@ -24,11 +25,23 @@ const handleAddNode = (addNode,elements,setElements,nodes,setNodes,cyRef,inputNo
     if (inputNode.current[0]){
       inputNode.current[0].children[1].children[0].value = null;
     }
+  }
 }
 
-const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE) => {
-  setDuplicateE(false);
+const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE,setForceW) => {
+  if (e.key==='Enter'){
+    setDuplicateE(false);
     let edge = addEdge.split(',');
+    if (edge.length<3 || edge[2]==='' || isNaN(edge[2])){
+      if (inputEdge.current[0]){
+        inputEdge.current[0].children[1].children[0].value = null;
+      }
+      setForceW(prev=>!prev);
+      setTimeout(() => {
+        setForceW(prev=>!prev);
+      }, 1000);
+      return;
+    }
     //overwrite old weight or return edge already exist if same edge with same weight.
     if (cyRef){
       let a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`).data();
@@ -59,13 +72,15 @@ const handleAddEdge = (addEdge,nodes,elements,setElements,cyRef,inputEdge,setDup
     if (inputEdge.current[0]){
       inputEdge.current[0].children[1].children[0].value = null;
     }
+  }
 }
 
 //handle animation in async await as a recursive highlightNextEle runs
-const handleKruskal = (cyRef) => {
+const handleKruskal = (cyRef,setHL) => {
     var k = cyRef.elements().kruskal(function(edge){
         return edge.data('weight');
     });
+    setHL(k);
     var i = 0;
     console.log("@@@",k);
     //need this to delay the highlight for 1s.
@@ -79,20 +94,21 @@ const handleKruskal = (cyRef) => {
   highlightNextEle();
 }
 
-const handleRemoveAnimation = (cyRef) => {
-    var k = cyRef.elements().kruskal(function(edge){
-        return edge.data('weight'); 
-    });
-    console.log(k);
+const handleRemoveAnimation = (cyRef,hl,setHL) => {
+    if (!hl){
+      console.log("No highlighted elements");
+      return;
+    }
     var i = 0;
     var removeStyleNextEle = function(){
-        if( i < k.length ){
-            k[i].removeClass('highlighted');
+        if( i < hl.length ){
+            hl[i].removeClass('highlighted');
             i++;
             removeStyleNextEle();
         }
     }
     removeStyleNextEle();
+    setHL(null);
 }
 
 // get node k and all edges coming out from it
@@ -107,10 +123,9 @@ const handleRemoveNode = (cyRef,inputNode,node,setRemoveNode)=>{
 }
 const handleRemoveEdge = (cyRef,inputEdge,edge,setRemoveEdge) => {
   edge = edge.split(',');
-  console.log(edge);
-  console.log(cyRef);
-  //cy selector
-  const removeEdge = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`);
+  const a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`);
+  const b = cyRef.edges(`edge[source="${edge[1]}"][target="${edge[0]}"]`);
+  const removeEdge = a.length>0?a:b;
   cyRef.remove(removeEdge);
   setRemoveEdge("");
   if (inputEdge.current[1]){
@@ -129,22 +144,27 @@ const Kruskal = (props) =>{
   //this 2 ref are used for multiple components
   const inputNode = React.useRef([]);
   const inputEdge = React.useRef([]);
+  //highlight elements state
+  const [hl,setHL] = React.useState(null);
+  //Force edge to have weight
+  const [forceW, setForceW] = React.useState(false);
 
   return (
     <>
       {/* Add UI instruction here later */}
       <div>
-        <TextField id="outlined-basic" label="Node" variant="outlined" ref={el=>inputNode.current[0]=el} onChange={(e) => setNewNode(e.target.value)}/>
-        <Button variant='contained' onClick={()=>handleAddNode(newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}>Add node</Button>
-        <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}}/>
-        <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE)}>Add edge</Button>
+        <TextField id="outlined-basic" label="Node" variant="outlined" ref={el=>inputNode.current[0]=el} onChange={(e) => setNewNode(e.target.value)} onKeyDown={(e)=> handleAddNode(e,newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}/>
+        {/* <Button variant='contained' onClick={()=>handleAddNode(newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN)}>Add node</Button> */}
+        <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el=>inputEdge.current[0]=el} onChange={(e) => {setNewEdge(e.target.value)}} onKeyDown={(e)=>handleAddEdge(e,newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setForceW)}/>
+        {/* <Button variant='contained' onClick={()=>handleAddEdge(newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setForceW)}>Add edge</Button> */}
       </div>
-      <Button variant='contained' onClick={()=>{handleKruskal(props.cyRef)}}>Run Kruscal</Button>
-      <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef)}}>Clear Animation</Button>
+      <Button variant='contained' onClick={()=>{handleKruskal(props.cyRef,setHL)}}>Run Kruscal</Button>
+      <Button variant='contained' onClick={()=>{handleRemoveAnimation(props.cyRef,hl,setHL)}}>Clear Animation</Button>
       <TextField id="outlined-basic" label="Remove Edge" variant="outlined" ref={el => inputEdge.current[1] = el} onChange={(e) => setRemoveEdge(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge)}}>Remove edge</Button>
       <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
       <Button variant="contained" onClick={()=>{handleRemoveNode(props.cyRef,inputNode,removeNode,setRemoveNode)}}>Remove node</Button>
+      {forceW&&<div style={{color:'red'}}>Please add weight when adding edges</div>}
       {duplicateN && <div>Node is already exist</div>}
       {duplicateE && <div>Edge with the same weight is already exist</div>}
     </>

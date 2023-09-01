@@ -26,7 +26,7 @@ function App() {
       .selector('node')
         .style({'label':'data(id)'})
         .css({
-          'content': 'data(id)'
+          'content': 'data(label)',
         })
       .selector('edge')
         .css({
@@ -48,6 +48,9 @@ function App() {
         .css({
           'content': 'data(weight)'
         })
+      //dupmy css to make rerender on finish DFS
+      .selector('.resetDfs')
+        .css({})
     cyRef.current.zoomingEnabled(false);
   }
   return (
