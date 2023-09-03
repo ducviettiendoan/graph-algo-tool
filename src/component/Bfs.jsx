@@ -2,6 +2,7 @@ import React from 'react';
 import { Button, TextField } from '@mui/material';
 import { JsonInput } from '@mantine/core';
 import BfsDetail from './sbs/BfsDetail';
+import { detectInvalid } from '../util/util';
 
 const POSITION_X = 400;
 const POSITION_Y = 250;
@@ -140,18 +141,23 @@ const handleRemoveEdge = (cyRef,inputEdge,edge,setRemoveEdge,setSbs) => {
   }
 }
 
-const handleAdjMatrixInput = (cyRef,adjMatrix,setDuplicateN,setDuplicateE,elements,setElements,nodes,setNodes) => {
+const handleAdjMatrixInput = (cyRef,adjMatrix,setDuplicateN,setDuplicateE,elements,setElements,nodes,setNodes,setValidation) => {
   console.log(adjMatrix);
   if (adjMatrix.length === 0){return null;}
   if (adjMatrix[0].length !== adjMatrix.length){
     return null;
   }
+  //validate matrix input
+  setValidation(true);
+  const inputValidate = detectInvalid(adjMatrix,setValidation);
+  if (!inputValidate){
+    setValidation(false);
+    return;
+  }
   //add Node
   for (let i=1;i<=adjMatrix.length;i++){
-    console.log("add");
     addNode(cyRef,i,setDuplicateN,elements,setElements,nodes,setNodes);
   }
-  console.log("After add nodes",nodes,cyRef.nodes());
   //add Edge
   let row = adjMatrix.length;
   let col = adjMatrix[0].length;
@@ -159,17 +165,15 @@ const handleAdjMatrixInput = (cyRef,adjMatrix,setDuplicateN,setDuplicateE,elemen
     for (let j=0;j<col;j++){
       if (adjMatrix[i][j] === 1){
         let edge = `${i+1},${j+1}`;
-        console.log("@@",edge);
         addEdge(cyRef,edge,nodes,elements,setElements,setDuplicateE);
       }
     }
-    
   }
 }
 
-const handleCreateGraphAdjMatrix = (cyRef,setDuplicateN,setDuplicateE,elements,setElements,nodes,setNodes,value,adjMatrix,setAdjMatrix) => {
+const handleCreateGraphAdjMatrix = (cyRef,setDuplicateN,setDuplicateE,elements,setElements,nodes,setNodes,value,setValidation) => {
   console.log(value);
-  handleAdjMatrixInput(cyRef,value,setDuplicateN,setDuplicateE,elements,setElements,nodes,setNodes);
+  handleAdjMatrixInput(cyRef,value,setDuplicateN,setDuplicateE,elements,setElements,nodes,setNodes,setValidation);
 }
 const Bfs = (props) =>{
   const [newNode, setNewNode] = React.useState(null);
@@ -186,9 +190,12 @@ const Bfs = (props) =>{
   //visualization true = algo animation is running do not interrupt
   const [visualization, setVisualization] = React.useState(false);
 
+  //adj list + matrix input validation
   const [value, setValue] = React.useState('');
   const [adjList, setAdjList] = React.useState();
   const [adjMatrix, setAdjMatrix] = React.useState([]);
+  const [validation, setValidation] = React.useState([]);
+
   //this 2 ref are used for multiple components
   const inputNode = React.useRef([]); 
   const inputEdge = React.useRef([]);
@@ -231,7 +238,8 @@ const Bfs = (props) =>{
 
       <BfsDetail cyRef={props.cyRef} sbs={sbs} setSbs={setSbs} visualization={visualization}/>
       <JsonInput value={value} onChange={setValue} autosize style={{"width":"20%"}}/>
-      <Button onClick={()=>handleCreateGraphAdjMatrix(props.cyRef,setDuplicateN,setDuplicateE,props.elements,props.setElements,nodes,setNodes,JSON.parse(value),adjMatrix,setAdjMatrix)}>Generate Graph</Button>
+      <Button onClick={()=>handleCreateGraphAdjMatrix(props.cyRef,setDuplicateN,setDuplicateE,props.elements,props.setElements,nodes,setNodes,JSON.parse(value),setValidation)}>Generate Graph</Button>
+      {!validation && <div>Input is not valid for undirected graph</div>}
     </>
   );
   }

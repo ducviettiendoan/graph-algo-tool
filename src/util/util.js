@@ -82,3 +82,33 @@ export function primMST(graph,V,cyRef,idChart)
     console.log("PRIM AFTER RUN",k);
     return k;
 }
+
+//detect invalid adj matrix input
+//Return 1 for valid, 0 for invalid
+export const detectInvalid = (matrix) => {
+    const row = matrix.length;
+    const col = matrix[0].length;
+    let inValid = false;
+    let m = {};
+    for (let i=0; i<row; i++){
+        for (let j=0; j<col; j++){
+            if (matrix[i][j] === 1){
+                let curr = `${i}${j}`;
+                let r_curr = curr.split("").reverse().join("");
+                if (m.hasOwnProperty(r_curr)){
+                    m[r_curr] -= 1;
+                }else{
+                    m[curr] = 1;
+                }
+            }
+        }
+    }
+    console.log("DEBUG",m);
+    Object.keys(m).forEach((key)=>{
+        if (m[key] === 1){
+            inValid = true;
+        }
+    });
+    if (inValid){return 0;}
+    return 1;
+}
