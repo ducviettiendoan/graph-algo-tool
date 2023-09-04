@@ -112,3 +112,4 @@ export const detectInvalid = (matrix) => {
     if (inValid){return 0;}
     return 1;
 }
+
