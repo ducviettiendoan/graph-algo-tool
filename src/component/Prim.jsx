@@ -3,78 +3,89 @@ import { Button, TextField } from '@mui/material';
 // import * as ReactDOM from 'react-dom';
 import { primMST } from '../util/util';
 import PrimDetail from './sbs/PrimDetail';
+import { JsonInput } from '@mantine/core';
+import { detectInvalidWeight } from '../util/util';
 
 const POSITION_X = 400;
 const POSITION_Y = 250;
 
-const handleAddNode = (e,addNode,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN,setSbs) => {
-  if (e && e.key==='Enter'){
-    setSbs(false);
-    const random_x = Math.floor(Math.random() * 100) + 1;
-    const add_x = random_x > 50 ? random_x:random_x-100;
-    const add_y = Math.floor(Math.random() * 100) + 50;    
-    if (cyRef && cyRef.elements(`node#${addNode}`).size()>0){
-      setDuplicateN(true);
-      return;
-    }
-    let new_node = {};
-    elements.length === 0 ? new_node = { data: { id: `${addNode}`, label: `Node ${addNode}` }, position: { x: POSITION_X, y: POSITION_Y} } : 
-    new_node = { data: { id: `${addNode}`, label: `Node ${addNode}` }, position: { x: elements[0].position.x+add_x, y: elements[0].position.y+add_y} } //position based on 1st node
-    setElements([...elements, new_node]);
-    setNodes([...nodes,new_node.data.id]);
-    if (cyRef){
-      cyRef.add(new_node);
-    }
-    if (inputNode.current[0]){
-      inputNode.current[0].children[1].children[0].value = null;
-    }
+const addNode = (cyRef,node,setDuplicateN,elements,setElements,nodes,setNodes,inputNode) => {
+  const random_x = Math.floor(Math.random() * 100) + 1;
+  const add_x = random_x > 50 ? random_x:random_x-100;
+  const add_y = Math.floor(Math.random() * 100) + 50;  
+  if (cyRef && cyRef.elements(`node#${node}`).size()>0){
+    setDuplicateN(true);
+    return;
+  }
+  let new_node = {};
+  console.log(cyRef.nodes());
+  cyRef.nodes().length === 0 ? new_node = { data: { id: `${node}`, label: `Node ${node}` }, position: { x: POSITION_X, y: POSITION_Y} } : 
+  new_node = { data: { id: `${node}`, label: `Node ${node}` }, position: { x: cyRef.nodes()[0].position('x')+add_x, y: cyRef.nodes()[0].position('y')+add_y} } //position based on 1st node
+  setElements([...elements, new_node]);
+  setNodes([...nodes,new_node.data.id]);
+  if (cyRef){
+    cyRef.add(new_node);
+  }
+  if (inputNode && inputNode.current[0]){
+    inputNode.current[0].children[1].children[0].value = null;
   }
 }
 
-const handleAddEdge = (e,addEdge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE,setForceW,setSbs) => {
-  if (e&&e.key==="Enter"){
-    setDuplicateE(false);
+const handleAddNode = (e,node,elements,setElements,nodes,setNodes,cyRef,inputNode,setDuplicateN,setSbs) => {
+  if (e && e.key==='Enter'){
     setSbs(false);
-    let edge = addEdge.split(',');
-    if (edge.length<3 || edge[2]==='' || isNaN(edge[2])){
-      if (inputEdge.current[0]){
-        inputEdge.current[0].children[1].children[0].value = null;
-      }
-      setForceW(prev=>!prev);
-      setTimeout(() => {
-        setForceW(prev=>!prev);
-      }, 1000);
-      return;
-    }
-    //overwrite old weight or return edge already exist if same edge with same weight.
-    if (cyRef){
-      let a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`).data();
-      let b = cyRef.edges(`edge[source="${edge[1]}"][target="${edge[0]}"]`).data();
-      let findEdge;
-      a ? findEdge = a : findEdge = b;
-      if (findEdge){
-        if (edge[2] === findEdge.weight){
-          setDuplicateE(true);
-          return;
-        }
-        //delete edge and re-add.
-        const removeEdge = cyRef.edges(`edge[source="${findEdge.source}"][target="${findEdge.target}"][weight="${findEdge.weight}"]`);
-        cyRef.remove(removeEdge);
-      }
-    }
-    //handle edge does not exist
-    if (nodes.includes(edge[0]) && nodes.includes(edge[1])){
-        let new_edge = { data: { source: `${edge[0]}`, target: `${edge[1]}`, label: `Edge from Node${edge[0]} to Node${edge[1]}`, weight: `${edge[2]}`}};
-        setElements([...elements, new_edge]);
-        cyRef.add(new_edge);
-        cyRef._private.elements[cyRef._private.elements.length-1].addClass('weight');  
-    }else{
-        console.error("Cannot add edge!");
-    }
-    //handle clear TextField value
+    addNode(cyRef,node,setDuplicateN,elements,setElements,setNodes,nodes,inputNode);
+  }
+}
+
+const addEdge = (cyRef,a_edge,nodes,elements,setElements,setDuplicateE,inputEdge,setForceW) => {
+  let edge = a_edge.split(',');
+  //invalid edge validation
+  if (edge.length<3 || edge[2]==='' || isNaN(edge[2])){
     if (inputEdge.current[0]){
       inputEdge.current[0].children[1].children[0].value = null;
     }
+    setForceW(prev=>!prev);
+    setTimeout(() => {
+      setForceW(prev=>!prev);
+    }, 1000);
+    return;
+  }
+  //overwrite old weight or return edge already exist if same edge with same weight.
+  if (cyRef){
+    let a = cyRef.edges(`edge[source="${edge[0]}"][target="${edge[1]}"]`).data();
+    let b = cyRef.edges(`edge[source="${edge[1]}"][target="${edge[0]}"]`).data();
+    let findEdge;
+    a ? findEdge = a : findEdge = b;
+    if (findEdge){
+      if (edge[2] === findEdge.weight){
+        setDuplicateE(true);
+        return;
+      }
+      //delete edge and re-add.
+      const removeEdge = cyRef.edges(`edge[source="${findEdge.source}"][target="${findEdge.target}"][weight="${findEdge.weight}"]`);
+      cyRef.remove(removeEdge);
+    }
+  }
+  //handle edge does not exist
+  if (cyRef.elements(`node#${edge[0]}`) && cyRef.elements(`node#${edge[1]}`)){
+      let new_edge = { data: { source: `${edge[0]}`, target: `${edge[1]}`, label: `Edge from Node${edge[0]} to Node${edge[1]}`, weight: `${edge[2]}`}};
+      setElements([...elements, new_edge]);
+      cyRef.add(new_edge);
+      cyRef._private.elements[cyRef._private.elements.length-1].addClass('weight');  
+  }else{
+      console.error("Cannot add edge!");
+  }
+  //handle clear TextField value
+  if (inputEdge && inputEdge.current[0]){
+    inputEdge.current[0].children[1].children[0].value = null;
+  }
+}
+const handleAddEdge = (e,a_edge,nodes,elements,setElements,cyRef,inputEdge,setDuplicateE,setForceW,setSbs) => {
+  if (e&&e.key==="Enter"){
+    setDuplicateE(false);
+    setSbs(false);
+    addEdge(cyRef,a_edge,inputEdge,setForceW,setDuplicateE,nodes,elements,setElements);
   }
 }
 
@@ -151,6 +162,62 @@ const handleRemoveEdge = (cyRef,inputEdge,edge,setRemoveEdge,setSbs) => {
     inputEdge.current[1].children[1].children[0].value = null;
   }
 }
+
+const handleAdjMatrixInput = (cyRef,adjMatrix,setDuplicateN,setDuplicateE,elements,setElements,nodes,setNodes,setValidation,inputNode,inputEdge,setForceW) => {
+  console.log(adjMatrix);
+  if (adjMatrix.length === 0){
+    setValidation(false);
+    return null;
+  }
+  console.log(adjMatrix);
+  for (let i=0; i<adjMatrix.length;i++){
+    if (adjMatrix[i].length !== adjMatrix.length){
+      setValidation(false);
+      return null;
+    }
+  }
+  console.log(adjMatrix);
+  //validate matrix input
+  setValidation(true);
+  const inputValidate = detectInvalidWeight(adjMatrix,setValidation);
+  if (!inputValidate){
+    setValidation(false);
+    return;
+  }
+  //add Node
+  for (let i=1;i<=adjMatrix.length;i++){
+    addNode(cyRef,i,setDuplicateN,elements,setElements,nodes,setNodes,inputNode);
+  }
+  //add Edge
+  let row = adjMatrix.length;
+  let col = adjMatrix[0].length;
+  for (let i=0;i<row;i++){
+    for (let j=0;j<col;j++){
+      if (adjMatrix[i][j] !== 0){
+        let edge = `${i+1},${j+1},${adjMatrix[i][j]}`;
+        addEdge(cyRef,edge,nodes,elements,setElements,setDuplicateE,inputEdge,setForceW);
+      }
+    }
+  }
+}
+
+const handleCreateGraphAdjMatrix = (cyRef,setDuplicateN,setDuplicateE,elements,setElements,nodes,setNodes,value,setValidation,setClearGraph,inputNode,inputEdge,setForceW) => {
+  console.log(value);
+  //make sure cyRef is empty
+  if (cyRef.elements().length > 0){
+    console.log(cyRef.elements(),"Empty your graph!");
+    //set state to open a clear graph button.
+    setClearGraph(true);
+    return;
+  }
+  handleAdjMatrixInput(cyRef,value,setDuplicateN,setDuplicateE,elements,setElements,nodes,setNodes,setValidation,inputNode,inputEdge,setForceW);
+}
+
+const handleClearGraph = (cyRef,setClearGraph) => {
+  cyRef.elements().map((ele)=> ele.remove());
+  setClearGraph(false);
+}
+
 const Prim = (props) =>{
   const [newNode, setNewNode] = React.useState(null);
   const [newEdge, setNewEdge] = React.useState(null);
@@ -170,6 +237,12 @@ const Prim = (props) =>{
   const [renderEdges,setRenderEdges] = React.useState([]);
   //Force edge to have weight
   const [forceW, setForceW] = React.useState(false);
+
+  //adj matrix input validation states
+  const [value, setValue] = React.useState('');
+  const [adjMatrix, setAdjMatrix] = React.useState([]);
+  const [validation, setValidation] = React.useState([]);
+  const [clearGraph, setClearGraph] = React.useState(false);
 
   //SBS
   const [sbs, setSbs] = React.useState(false);
@@ -251,6 +324,17 @@ const Prim = (props) =>{
       {duplicateN && <div>Node is already exist</div>}
       {duplicateE && <div>Edge with the same weight is already exist</div>}
       <PrimDetail cyRef={props.cyRef} sbs={sbs} setSbs={setSbs} visualization={visualization}/>
+      <JsonInput value={value} onChange={setValue} autosize style={{"width":"20%"}}/>
+      <Button onClick={()=>handleCreateGraphAdjMatrix(props.cyRef,setDuplicateN,setDuplicateE,props.elements,props.setElements,nodes,setNodes,JSON.parse(value),setValidation,setClearGraph,null,null,setForceW)}>
+        Generate Graph
+      </Button>
+      {clearGraph && 
+        <>
+        <div>Clear your graph before generating a new one</div>
+        <Button onClick={()=>handleClearGraph(props.cyRef,setClearGraph)}>Clear Graph</Button>
+        </>
+      }
+      {!validation && <div>Input is not valid for undirected graph</div>}
     </>
   );
 }

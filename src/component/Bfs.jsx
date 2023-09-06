@@ -147,9 +147,6 @@ const handleAdjMatrixInput = (cyRef,adjMatrix,setDuplicateN,setDuplicateE,elemen
     setValidation(false);
     return null;
   }
-  // if (adjMatrix[0].length !== adjMatrix.length){
-  //   return null;
-  // }
   console.log(adjMatrix);
   for (let i=0; i<adjMatrix.length;i++){
     if (adjMatrix[i].length !== adjMatrix.length){
@@ -214,9 +211,8 @@ const Bfs = (props) =>{
   //visualization true = algo animation is running do not interrupt
   const [visualization, setVisualization] = React.useState(false);
 
-  //adj list + matrix input validation
+  //adj matrix input validation states
   const [value, setValue] = React.useState('');
-  const [adjList, setAdjList] = React.useState();
   const [adjMatrix, setAdjMatrix] = React.useState([]);
   const [validation, setValidation] = React.useState([]);
   const [clearGraph, setClearGraph] = React.useState(false);
@@ -242,15 +238,45 @@ const Bfs = (props) =>{
   return (
     <>
       <div>
-        <TextField id="outlined-basic" label="Node" variant="outlined" ref={el => inputNode.current[0] = el} onChange={(e) => setNewNode(e.target.value)} onKeyDown={(e)=>handleAddNode(e,newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN,setSbs)}/>
-        <TextField id="outlined-basic" label="Edge" variant="outlined" ref={el => inputEdge.current[0] = el} onChange={(e) => {setNewEdge(e.target.value)}} onKeyDown={(e)=>handleAddEdge(e,newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setSbs)}/>
+        <TextField id="outlined-basic" 
+          label="Node" 
+          variant="outlined" 
+          ref={el => inputNode.current[0] = el} 
+          onChange={(e) => setNewNode(e.target.value)} 
+          onKeyDown={(e)=>handleAddNode(e,newNode,props.elements,props.setElements,nodes,setNodes,props.cyRef,inputNode,setDuplicateN,setSbs)}
+        />
+        <TextField id="outlined-basic" 
+          label="Edge" variant="outlined" 
+          ref={el => inputEdge.current[0] = el} 
+          onChange={(e) => {setNewEdge(e.target.value)}} 
+          onKeyDown={(e)=>handleAddEdge(e,newEdge,nodes,props.elements,props.setElements,props.cyRef,inputEdge,setDuplicateE,setSbs)}
+        />
       </div>
-      <TextField id="outlined-basic" label="Execute" variant="outlined" onChange={(e) => setRootNode(e.target.value)}/>
-      <Button variant='contained' onClick={()=>{handleBfs(props.cyRef,rootNode,order,setOrder,setOrderRender,setSbs,setVisualization)}}>Run BFS</Button>
-      <TextField id="outlined-basic" label="Remove Edge" variant="outlined" ref={el => inputEdge.current[1] = el} onChange={(e) => setRemoveEdge(e.target.value)}/>
-      <Button variant="contained" onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge,setSbs)}}>Remove edge</Button>
-      <TextField id="outlined-basic" label="Remove Node" variant="outlined" ref={el => inputNode.current[1] = el} onChange={(e) => setRemoveNode(e.target.value)}/>
-      <Button variant="contained" onClick={()=>{handleRemoveNode(props.cyRef,inputNode,removeNode,setRemoveNode,setSbs)}}>Remove node</Button>
+      <TextField id="outlined-basic" 
+        label="Execute" 
+        variant="outlined" 
+        onChange={(e) => setRootNode(e.target.value)}
+      />
+      <Button variant='contained' 
+        onClick={()=>{handleBfs(props.cyRef,rootNode,order,setOrder,setOrderRender,setSbs,setVisualization)}}
+      >Run BFS</Button>
+      <TextField id="outlined-basic" 
+        label="Remove Edge" 
+        variant="outlined" 
+        ref={el => inputEdge.current[1] = el} 
+        onChange={(e) => setRemoveEdge(e.target.value)}
+      />
+      <Button variant="contained" 
+        onClick={()=>{handleRemoveEdge(props.cyRef,inputEdge,removeEdge,setRemoveEdge,setSbs)}}
+      >Remove edge</Button>
+      <TextField id="outlined-basic" 
+        label="Remove Node" variant="outlined"  
+        ref={el => inputNode.current[1] = el} 
+        onChange={(e) => setRemoveNode(e.target.value)}
+      />
+      <Button variant="contained" 
+        onClick={()=>{handleRemoveNode(props.cyRef,inputNode,removeNode,setRemoveNode,setSbs)}}
+      >Remove node</Button>
       <div> Queue: 
         {orderRender.map((node)=>{
           return(<span>{node}</span>);
@@ -261,7 +287,9 @@ const Bfs = (props) =>{
 
       <BfsDetail cyRef={props.cyRef} sbs={sbs} setSbs={setSbs} visualization={visualization}/>
       <JsonInput value={value} onChange={setValue} autosize style={{"width":"20%"}}/>
-      <Button onClick={()=>handleCreateGraphAdjMatrix(props.cyRef,setDuplicateN,setDuplicateE,props.elements,props.setElements,nodes,setNodes,JSON.parse(value),setValidation,setClearGraph)}>Generate Graph</Button>
+      <Button onClick={()=>handleCreateGraphAdjMatrix(props.cyRef,setDuplicateN,setDuplicateE,props.elements,props.setElements,nodes,setNodes,JSON.parse(value),setValidation,setClearGraph)}>
+        Generate Graph
+      </Button>
       {clearGraph && 
         <>
         <div>Clear your graph before generating a new one</div>

@@ -113,3 +113,33 @@ export const detectInvalid = (matrix) => {
     return 1;
 }
 
+export const detectInvalidWeight = (matrix) => {
+    const row = matrix.length;
+    const col = matrix[0].length;
+    let inValid = false;
+    let m = {};
+    for (let i=0; i<row; i++){
+        for (let j=0; j<col; j++){
+            if (matrix[i][j] > 0){
+                let curr = `${i}${j}`;
+                let r_curr = curr.split("").reverse().join("");
+                if (m.hasOwnProperty(r_curr) && matrix[i][j] === m[r_curr]){
+                    m[r_curr] = 0;
+                }else{
+                    m[curr] = matrix[i][j];
+                }
+            }
+            else if(matrix[i][j] < 0){
+                return 0;
+            }
+        }
+    }
+    console.log("DEBUG",m);
+    Object.keys(m).forEach((key)=>{
+        if (m[key] !== 0){
+            inValid = true;
+        }
+    });
+    if (inValid){return 0;}
+    return 1;
+}
